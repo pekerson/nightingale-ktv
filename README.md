@@ -2,152 +2,120 @@
   <img src="client/src/assets/images/logo.png" alt="Nightingale" width="400">
 </p>
 
-<p align="center">
-  Karaoke from any song in your music library, powered by neural networks.
-</p>
+# Nightingale 家庭 KTV 改造版
 
-<p align="center">
-  <a href="https://github.com/rzru/nightingale/actions/workflows/release.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/rzru/nightingale/release.yml?style=flat-square&label=build"></a>
-  <a href="https://hub.docker.com/r/razzaru/nightingale"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/razzaru/nightingale?style=flat-square&logo=docker&logoColor=white&label=docker%20pulls"></a>
-  <a href="https://github.com/rzru/nightingale/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/rzru/nightingale?style=flat-square"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue?style=flat-square"></a>
-  <a href="https://www.patreon.com/cw/nightingalekaraoke"><img alt="Patreon" src="https://img.shields.io/badge/Patreon-Support-FF424D?style=flat-square&logo=patreon&logoColor=white"></a>
-  <a href="https://ko-fi.com/nightingalekaraoke"><img alt="Ko-fi" src="https://img.shields.io/badge/Ko--fi-Buy_a_coffee-FF5E5B?style=flat-square&logo=ko-fi&logoColor=white"></a>
-</p>
+这是基于 [Nightingale 原工程](https://github.com/rzru/nightingale) **v1.3.0** 的个人改造版本，并非原作者发布的官方版本。原工程将已有音乐曲库转换为卡拉 OK：分析歌曲、分离人声、准备同步歌词，并提供演唱、音高评分和点歌功能。本仓库保留原工程的应用源码，在此基础上加入面向家庭 KTV 的播放控制、歌词、MV、音频路由和界面改动。
 
-<p align="center">
-  <a href="https://nightingale.cafe/">Website</a> ·
-  <a href="https://github.com/rzru/nightingale/releases/latest">Downloads</a> ·
-  <a href="https://nightingale.cafe/docs/">Documentation</a> ·
-  <a href="CHANGELOG.md">Changelog</a> ·
-  <a href="https://discord.gg/68Vgng9vYp">Discord</a>
-</p>
+- **原工程仓库**：[rzru/nightingale](https://github.com/rzru/nightingale)
+- **原工程 v1.3.0**：[版本页面](https://github.com/rzru/nightingale/releases/tag/v1.3.0)
+- **原工程官网与使用文档**：[nightingale.cafe](https://nightingale.cafe/) · [用户指南](https://nightingale.cafe/docs/)
+- **本仓库**：[pekerson/nightingale-ktv](https://github.com/pekerson/nightingale-ktv)
+- **许可证**：沿用原工程的 GPL-3.0-or-later，见 [LICENSE](LICENSE)。
 
----
+> 本仓库是当前改造版的精简源码快照，保留应用源码、构建配置、部署脚本和许可证；不包含原工程网站、GitHub Actions、代理规则、构建缓存或安装包。下文的“v18”是本地改造阶段编号，应用清单仍使用原工程的 1.3.0 版本号。
 
-Nightingale turns music you already have into karaoke. It can separate lead vocals, find or produce word-timed lyrics, and play tracks with synchronized highlighting, pitch scoring, key and tempo controls, multiplayer, and dynamic backgrounds. Use the native desktop app on Linux, macOS, or Windows, or run the same experience as a self-hosted web app.
+## 原工程已有的功能
 
-## Highlights
+以下依据原工程 v1.3.0 的 [README](https://github.com/rzru/nightingale/blob/v1.3.0/README.md) 概括。它们是改造版继承的基础能力，并非本次新增。
 
-- **Bring your library** — scan local audio, video, and UltraStar files, or connect Plex, Jellyfin, or Navidrome. Existing provider and folder playlists appear as read-only navigation.
-- **Prepare tracks locally** — separate vocals with UVR Karaoke or Demucs, then use LRCLIB, local or pasted LRC, or automatic transcription and alignment for lyrics.
-- **Sing your way** — follow synchronized lyrics, score microphone pitch, adjust key and tempo, mix guide vocals, monitor the microphone, and compensate for room latency.
-- **Run a karaoke night** — build a playback queue, keep managing it during Session mode, switch profiles, compare scoreboards, or assign separate microphones to two to four local players.
-- **Set the stage** — use source video, GPU shaders, Pixabay loops, or custom image, video, and shader backgrounds; reposition and scale lyrics and the pitch graph.
-- **Use the screen you have** — desktop and self-hosted modes share the same karaoke core, with keyboard, gamepad, touch, and layouts ranging from phones to 4K displays.
-
-Detailed behavior, supported media formats, controls, analyzer options, and current limitations live in the [user guide](https://nightingale.cafe/docs/).
-
-## Get Nightingale
-
-| Mode | Start here |
+| 类别 | 原版功能 |
 | --- | --- |
-| Desktop | [Download the latest release](https://github.com/rzru/nightingale/releases/latest) |
-| Self-hosted Linux | [Installation guide](https://nightingale.cafe/docs/self-hosted.html) |
-| Docker | [CPU and CUDA images](https://nightingale.cafe/docs/docker.html) |
+| 曲库来源 | 扫描本地音频、视频和 UltraStar 文件；连接 Plex、Jellyfin、Navidrome；在界面中浏览已有文件夹与服务器歌单。 |
+| 歌曲分析 | 使用 UVR Karaoke 或 Demucs 分离人声与伴奏；利用本地 Python 分析流程和缓存处理歌曲。 |
+| 歌词 | 使用 LRCLIB、手工提供或粘贴的 LRC，也可自动转录并对齐成逐字歌词；演唱时同步高亮。 |
+| 演唱与评分 | 通过麦克风进行音高评分；调整歌曲调性、速度和干声音量；支持麦克风监听与延迟补偿。 |
+| 点歌与多人 | 播放队列、Session 模式、用户档案、排行榜，以及 2～4 名本地选手分别使用麦克风。 |
+| 演唱画面 | 歌曲自带视频、GPU 着色器、Pixabay 循环视频或自定义图片/视频/着色器背景；歌词和音高图可调整位置与缩放。 |
+| 运行方式 | Tauri 桌面应用与自托管 Web 应用共享 Rust 核心和 React 前端；原工程提供 Windows、macOS、Linux 桌面发布。 |
 
-Desktop releases support Linux x86_64/aarch64, macOS Apple Silicon/Intel, and Windows x86_64. Self-hosted release binaries support Linux x86_64/aarch64.
+## 本改造版新增和调整了什么
 
-First launch prepares an isolated copy of ffmpeg, Python, the analyzer packages, and required ML models. No system Python setup is needed, but the initial download is several gigabytes. GPU acceleration is optional; analysis falls back to CPU when CUDA or Apple Silicon acceleration is unavailable.
+### 播放控制与评分
 
-See [Getting Started](https://nightingale.cafe/docs/getting-started.html) for setup, platform-specific notes, updates, and adding music. For failures, check [Troubleshooting](https://nightingale.cafe/docs/troubleshooting.html).
+- **可拖动的演唱进度条**：原版演唱页只有文本时间。本版可拖动时间轴定位，并在进度区显示当前时间和总时长。
+- **进度区按钮**：暂停/继续、后退或前进 5 秒、后退或前进 20 秒；同一行另有重唱、跳过前奏、跳过尾奏和切歌。
+- **暂停与退出分开**：普通暂停和空格键只暂停或继续，不弹窗。播放控制中的“退出播放”以及 ESC 打开确认窗，可选择继续、退出或一键重唱。
+- **重唱当前歌曲**：演唱中、暂停时及评分页均可重新从头演唱；重置本轮临时状态，保留队列和以前保存的成绩。
+- **跳转后是否计分**：设置中决定拖进度条或用跳转按钮后，当前歌曲是否仍记入成绩；默认关闭，避免练习跳转进入正式成绩。
+- **切歌与评分**：切歌立即结束当前轮并显示评分；自然结束、切歌与跳尾奏使用统一结算路径。没有队列下一首时停留在评分页。
+- **自动下一首**：有队列下一首且评分页无人操作时默认约 5 秒后播放，可关闭，等待时间可设为 1～60 秒；评分页点击、按键或滚动会取消本次自动切换。
 
-## Documentation
+### 点歌、歌单与曲库操作
 
-- [Library sources](https://nightingale.cafe/docs/library-sources.html)
-- [Lyrics and transcription](https://nightingale.cafe/docs/lyrics.html)
-- [Controls](https://nightingale.cafe/docs/controls.html)
-- [Scoring](https://nightingale.cafe/docs/scoring.html) and [multiplayer](https://nightingale.cafe/docs/multiplayer.html)
-- [Backgrounds](https://nightingale.cafe/docs/backgrounds.html)
-- [Self-hosted web mode](https://nightingale.cafe/docs/self-hosted.html) and [Docker](https://nightingale.cafe/docs/docker.html)
-- [Building from source](https://nightingale.cafe/docs/building.html)
+- **快速点歌与置顶**：歌曲浏览列表和详情中可一键加入播放队列；队列中的歌曲可一键置顶。
+- **逐歌单自动分析**：每个歌单可“继承全局 / 开启 / 关闭”。开启时立即处理该歌单已有的未分析歌曲，后续新增歌曲也会在同步后进入分析；已分析歌曲不会反复处理。
+- **多选批量处理**：搜索栏右侧的“多选”按钮展开操作区；可在网格、表格及跨页结果中选择歌曲，批量分析、取消分析或清理分析缓存。清理缓存不删除原始歌曲文件。
 
-## Architecture
+### 歌词、LRC 和首尾奏
 
-Desktop and self-hosted delivery share one Rust application core and one React frontend. Transport adapters stay thin so karaoke behavior does not diverge between Tauri and the web server.
+- **优先使用已有歌词**：分析前先检查有效的已存转录或手工歌词，再尝试音频内嵌歌词、同名外置 LRC、Jellyfin/Navidrome 提供的服务器歌词；均没有时才执行 AI 歌词识别。找到有效歌词后仍继续进行其他歌曲分析。
+- **增强 LRC 支持**：兼容句首与句尾时间戳、逐字/逐词时间戳、重复时刻和 offset；播放页显示干净的歌词正文，编辑页也不把逐字或句尾时间戳误当歌词显示，同时保留可编辑的原始时间轴。
+- **前奏定位**：结合分离干声中的首个人声区间与首句歌词时间，尽量避开片头制作信息。跳过前奏默认跳到首句前 3 秒，可在设置中调为 0～10 秒；尾奏跳转使用有效的末句时序。
+- **单曲人工校准**：歌词编辑页可为每首歌单独设首句开始时间，按 `XX:XX.XXX` 的分、秒、毫秒三栏输入；人工值优先于自动检测，并可恢复自动。
 
-```mermaid
-flowchart LR
-    UI["React UI"] --> Bridge["Typed bridge / client"]
-    Bridge --> Tauri["Tauri IPC adapter"]
-    Bridge --> Web["HTTP + WebSocket adapter"]
-    Tauri --> API["app-api command contract"]
-    Web --> API
-    API --> Core["app-core"]
-    Core --> Sources["Folder / Plex / Jellyfin / Navidrome"]
-    Core --> Storage["SQLite library + cache"]
-    Core --> Analyzer["Local Python analyzer"]
-```
+### 音频设备、混音与调性
 
-The analyzer runs as a persistent local process over token-authenticated loopback IPC, avoiding model startup cost for every song. Analysis artifacts are cached by BLAKE3 source hash, so unchanged tracks reuse stems, transcripts, lyrics, and shifted playback variants.
+- **三路独立音量**：播放时分别调节伴奏、干声和麦克风监听；每次开始新歌或重唱，三路默认均为 100%。有独立干声分轨的歌曲可在演唱中通过干声音量调整原唱与伴奏比例。
+- **设备选择与双输出**：设置页可下拉选择麦克风、最多两个扬声器，并分别指定每个扬声器播放伴奏、干声、麦克风中的哪些音源。
+- **实时升降调**：演唱页显示当前调性，并提供升调、降调按钮；切换时保持本轮播放位置和状态。
+- **可配置快捷键**：设置页可修改现有 24 个键盘动作。默认空格暂停/继续、左右方向键后退/前进 5 秒、ESC 退出确认、上下方向键调整伴奏音量各 10%；NumLock 关闭时小键盘 8/2 也可作为上下方向键。
 
-### Repository layout
+### MV 与演唱界面
 
-| Path | Responsibility |
+- **逐歌关联外部 MV**：歌曲详情中的独立“编辑 MV”界面可指定视频路径、查看自动匹配结果并为该歌曲启用或关闭 MV。设置中的 MV 目录可按文件主名与歌名完全匹配，人工选择优先于自动匹配。
+- **映射盘和播放兼容**：自动匹配使用与歌曲标题或“标题 - 艺人”完全相同的视频文件主名；支持程序现有的视频格式（MP4、MKV、AVI、WebM、MOV、M4V）。处理 Windows 映射盘（如 K:）的扫描与本地缓存，必要时重封装或转码。MV 只出画面，歌曲声音仍来自曲库；画面等比例完整显示，空余位置填黑，短于歌曲时后续为黑屏。
+- **进度区折叠**：播放控制默认展开；进度、按钮和音量区也默认展开，可手动收起或展开，状态跨歌曲与重启保留；歌名、歌手始终显示。
+- **歌词与音高图**：可分别开关；关闭后相应位置设置折叠。两者分别设置水平/垂直锚点及左右/上下偏移。音高图以中央竖线标识当前时刻，左侧为历史、右侧为后续参考音高；默认总时间范围约为原版两倍，还可在设置中调节，缩放上限为 500%。
+- **界面大小与语言**：可调进度区、右侧状态文字、播放控制按钮的尺寸（各 50%～200%），全局字号为 12～24；支持 English / 简体中文切换并记住选择。独立播放窗保留可拖动的透明顶部区域，右侧三个窗口按钮使用对称圆角边框。
+
+## 当前版本的完整功能总览
+
+这一节把**继承原版**与**本次改造**合并，便于直接了解当前软件能做什么。
+
+| 使用场景 | 当前功能 |
 | --- | --- |
-| `app-core/` | Shared application behavior, source adapters, persistence, media serving, analyzer orchestration, and analyzer scripts |
-| `app-api/` | Shared command contract, dispatch, state, events, and error classification |
-| `client/src/` | React interface, feature modules, typed runtime bridge, playback, and microphone processing |
-| `client/src-tauri/` | Tauri desktop adapter and native capabilities |
-| `client/src-server/` | Axum HTTP/WebSocket adapter and embedded web bundle |
-| `site/` | Astro website and mdBook user guide |
-| `docker/`, `scripts/` | Container and bare-metal self-hosted distribution |
+| 建立曲库 | 导入本地音频、视频与 UltraStar，或连接 Plex、Jellyfin、Navidrome；浏览文件夹和服务器歌单；搜索、选择与批量管理歌曲。 |
+| 准备歌曲 | 人声/伴奏分离、歌词识别与对齐、音高参考分析及缓存；可按全局或单个歌单策略自动分析已有和新增歌曲。 |
+| 管理歌词 | 使用 LRCLIB、手工歌词、音频内嵌歌词、同名 LRC、服务器歌词或 AI 识别；支持标准/增强逐字 LRC、歌词编辑与单曲首句校准。 |
+| 演唱与练习 | 同步歌词、麦克风音高评分、多人演唱、调性和速度调整；可拖动进度，暂停、跳转、重唱、跳前尾奏与切歌；跳转后计分策略可设。 |
+| 混音与设备 | 主音量、伴奏/干声/麦克风监听独立音量，麦克风延迟补偿；可选择麦克风、最多两个输出设备及各自音源；演唱中升降调。 |
+| 点歌与成绩 | 播放队列、一键入队/置顶、Session 模式、用户档案与排行榜；唱完或切歌显示评分，可按设置自动进入下一首。 |
+| 画面与 MV | 原歌曲视频、着色器、Pixabay 和自定义背景；可逐歌关联静音外部 MV；歌词及音高图显隐、位置、尺寸、未来音高预览和进度区折叠。 |
+| 操作与运行 | 中英文界面、可配置快捷键、键盘/游戏手柄/触屏操作；保留桌面和自托管 Web 两种架构。 |
 
-## Development
+## 从本仓库运行源码
 
-### Prerequisites
+这是精简源码仓库，保留 `app-api/`、`app-core/`、`client/`、`xtask/` 及相关构建配置。原工程网站 `site/`、GitHub 自动发布工作流和代理规则文件没有复制进来，因此**上游官网的下载链接、构建状态和发布流程不代表本改造版**。
 
-| Tool | Version |
-| --- | --- |
-| Rust | 1.94.1, pinned by `rust-toolchain.toml` |
-| Node.js | 22.12 or newer |
-| pnpm | 11.2.2 |
+原版项目要求 Rust 1.94.1（由 `rust-toolchain.toml` 固定）、Node.js 22.12+、pnpm 11.2.2。Windows 桌面开发可从仓库根目录尝试：
 
-Platform build packages, including Windows ASIO and Linux WebKit requirements, are listed in the [building guide](https://nightingale.cafe/docs/building.html).
-
-### Run the desktop app
-
-```bash
-git clone https://github.com/rzru/nightingale.git
-cd nightingale
-pnpm --dir client install --frozen-lockfile
+```powershell
+pnpm --dir client install --frozen-lockfile --ignore-scripts
 cargo desktop dev
 ```
 
-Create a production bundle for the current platform with:
+本精简快照移除了原工程的代理规则和 Git 钩子，但 `client/package.json` 仍保留对应安装脚本，所以首次安装依赖使用 `--ignore-scripts`。前端代码检查可运行 `pnpm --dir client quality:web`；完整 `quality` 命令包含已排除的规则检查，不适用于此快照。当前改造与安装包的实际验收主要在 **Windows x64** 完成；原版宣称的其他平台与自托管能力，尚未对本改造版逐平台重新验收。
 
-```bash
-cargo desktop build
-```
+### 目录
 
-Before submitting application changes, run the repository checks:
+| 路径 | 内容 |
+| --- | --- |
+| `app-core/` | Rust 核心、歌曲来源、数据库、歌词与 MV 关联、分析器及媒体处理 |
+| `app-api/` | 统一命令接口、配置与事件 |
+| `client/src/` | React 界面、播放、曲库、歌词、设置与音频路由 |
+| `client/src-tauri/` | 桌面端 Tauri 适配和资源 |
+| `client/src-server/` | 自托管 Web 服务适配 |
+| `xtask/` | 桌面构建辅助命令 |
+| `docker/`、`scripts/` | 自托管部署相关文件 |
 
-```bash
-pnpm --dir client format
-pnpm --dir client quality
-```
+## 验证范围与已知边界
 
-Website and guide tooling runs separately from `site/`; use `pnpm --dir site build` to validate those changes.
+- 当前源码已作为个人改造版维护；本 README 说明源码具备的功能，**不表示每项都已在所有平台和硬件组合上实测**。Windows x64 的改造版构建和主要界面流程已有验收记录；真实双扬声器同步听感、不同实体麦克风及其他平台需要在目标设备上复核。
+- 双输出的音源分配取决于系统和浏览器/桌面运行环境对指定输出设备的支持。没有独立干声分轨的歌曲无法仅靠滑杆分离出原唱。
+- 前奏和尾奏判断依赖有效歌词时序与分离音轨质量；对检测不准的歌曲可手工校准首句。
+- 逐歌关联的 MV 是**无声画面**，不替换曲库里的歌曲音频。本改造版没有新增演唱录音与回放功能。
+- 本仓库暂不包含安装包；需要发布二进制文件时，应另建 GitHub Release，并与相应源码提交对应。
 
-## Contributing
+## 来源与许可
 
-Nightingale follows a discussion-first workflow. Before implementing a feature or behavior change, open a [GitHub Discussion](https://github.com/rzru/nightingale/discussions) and wait for it to be approved. Small documentation corrections and obvious bug fixes can go directly to a pull request. Read [CONTRIBUTING.md](CONTRIBUTING.md) before starting.
-
-## Releasing
-
-Tags matching `v*` trigger [the release workflow](.github/workflows/release.yml). It verifies the tag against the desktop manifests, extracts release notes from [CHANGELOG.md](CHANGELOG.md), and creates a draft containing desktop installers, updater artifacts, and self-hosted server archives. Smoke-test the draft artifacts, then publish the release through GitHub.
-
-```bash
-git tag v<version>
-git push origin v<version>
-```
-
-The workflow and its helper scripts are the canonical source for artifact and signing details.
-
-## Support the project
-
-Nightingale is free, open source, and maintained in spare time. Support ongoing development through [Patreon](https://www.patreon.com/cw/nightingalekaraoke) or [Ko-fi](https://ko-fi.com/nightingalekaraoke).
-
-## License
-
-GPL-3.0-or-later — see [LICENSE](LICENSE).
+感谢 [Nightingale 原工程及贡献者](https://github.com/rzru/nightingale)。本改造版保留原工程的 [GPL-3.0-or-later 许可证](LICENSE)。原工程的官网、文档、下载和社区链接属于原项目；本仓库的功能说明、验证范围与发布文件以本仓库内容为准。
