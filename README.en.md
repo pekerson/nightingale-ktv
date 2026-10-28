@@ -20,6 +20,12 @@ This is a personal modification of [Nightingale](https://github.com/rzru/nightin
 
 > This repository is a trimmed source snapshot of the modified edition. It includes application source, build configuration, deployment scripts, and the license. It does not include the upstream website, GitHub Actions, agent rules, or build caches. The installer is a separate Release asset, not a file in the source tree. “v18” below is a local modification-stage number; the application manifests still use the upstream 1.3.0 version number.
 
+## Development approach and support
+
+All code changes to the upstream project in this repository were made with AI based on functional requirements I provided. My role was limited to proposing those requirements and testing the software's features. I did not write or modify the code, and I am not able to resolve bugs that may occur. Therefore, this project does not provide technical support or ongoing upgrade or update services.
+
+If you need different functionality, you may use AI to modify this repository's source code, then rebuild, package, and install your own version.
+
 ## Features already present upstream
 
 The following summarizes the upstream v1.3.0 [README](https://github.com/rzru/nightingale/blob/v1.3.0/README.md). These are inherited capabilities, not additions made in this edition.
