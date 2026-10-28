@@ -16,8 +16,9 @@ This is a personal modification of [Nightingale](https://github.com/rzru/nightin
 - **Upstream website and documentation:** [nightingale.cafe](https://nightingale.cafe/) · [user guide](https://nightingale.cafe/docs/)
 - **This repository:** [pekerson/nightingale-ktv](https://github.com/pekerson/nightingale-ktv)
 - **License:** GPL-3.0-or-later, retained from upstream; see [LICENSE](LICENSE).
+- **Windows x64 test installer:** [v1.3.0-ktv18-test Release](https://github.com/pekerson/nightingale-ktv/releases/tag/v1.3.0-ktv18-test); SHA-256: `16B2974D719891EA16A00B095DA303FEAA85A0B14D0B0675F3A76B8CA237DE3E`.
 
-> This repository is a trimmed source snapshot of the modified edition. It includes application source, build configuration, deployment scripts, and the license. It does not include the upstream website, GitHub Actions, agent rules, build caches, or installers. “v18” below is a local modification-stage number; the application manifests still use the upstream 1.3.0 version number.
+> This repository is a trimmed source snapshot of the modified edition. It includes application source, build configuration, deployment scripts, and the license. It does not include the upstream website, GitHub Actions, agent rules, or build caches. The installer is a separate Release asset, not a file in the source tree. “v18” below is a local modification-stage number; the application manifests still use the upstream 1.3.0 version number.
 
 ## Features already present upstream
 
@@ -119,7 +120,7 @@ This trimmed snapshot omits the upstream agent rules and Git hooks, but `client/
 - Dual-output routing depends on the OS and browser/desktop runtime supporting selected output devices. A song without a separate dry-vocal stem cannot gain isolated original vocals from a volume slider alone.
 - Intro/outro detection depends on valid lyric timing and separated-stem quality; manually calibrate the first line for songs where automatic detection is inaccurate.
 - An associated MV is **silent video** and does not replace the library song audio. This edition does not add singing recording or playback of a recording.
-- This repository currently contains no installer. Publish binaries in a GitHub Release tied to the corresponding source commit.
+- The Windows x64 test installer is available in [this repository's Release](https://github.com/pekerson/nightingale-ktv/releases/tag/v1.3.0-ktv18-test), outside Git source history. While the repository is private, downloads require repository access.
 
 ## Attribution and license
 
