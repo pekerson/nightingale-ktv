@@ -2,6 +2,11 @@
   <img src="client/src/assets/images/logo.png" alt="Nightingale" width="400">
 </p>
 
+<p align="right">
+  <a href="README.md"><kbd>简体中文</kbd></a>
+  <a href="README.en.md"><kbd>English</kbd></a>
+</p>
+
 # Nightingale 家庭 KTV 改造版
 
 这是基于 [Nightingale 原工程](https://github.com/rzru/nightingale) **v1.3.0** 的个人改造版本，并非原作者发布的官方版本。原工程将已有音乐曲库转换为卡拉 OK：分析歌曲、分离人声、准备同步歌词，并提供演唱、音高评分和点歌功能。本仓库保留原工程的应用源码，在此基础上加入面向家庭 KTV 的播放控制、歌词、MV、音频路由和界面改动。
