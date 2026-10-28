@@ -1,0 +1,96 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+import {
+  addCustomBackgroundUrl,
+  importCustomBackgroundFile,
+  loadCustomShaderSource,
+  removeCustomBackground,
+} from '@/bridge/backgrounds';
+import { validateCustomShader } from '@/features/playback/lib/custom-shader';
+import type { Translator } from '@/shared/i18n/translate';
+import { useI18n } from '@/shared/i18n/use-i18n';
+import { CONFIG } from '@/shared/query-keys';
+import type { AppConfig } from '@/types/AppConfig';
+import type { CustomBackground } from '@/types/CustomBackground';
+
+import type { BackgroundDraft } from '../lib/background-draft';
+
+async function validateAddedShader(
+  before: readonly CustomBackground[],
+  saved: AppConfig,
+  cacheConfig: (config: AppConfig) => void,
+  t: Translator,
+): Promise<AppConfig> {
+  const previousIds = new Set(before.map((background) => background.id));
+  const added = saved.custom_backgrounds.find((background) => !previousIds.has(background.id));
+  if (added === undefined || added.background_type !== 'shader') {
+    return saved;
+  }
+
+  const source = await loadCustomShaderSource(added);
+  const error = validateCustomShader(source);
+  if (error === undefined) {
+    return saved;
+  }
+
+  const reverted = await removeCustomBackground(added.id);
+  cacheConfig(reverted);
+  const message = error.length > 320 ? `${error.slice(0, 317)}…` : error;
+  throw new Error(t('Shader did not compile: {0}', { '0': message }));
+}
+
+export function useBackgroundMutations({
+  config,
+  onAdded,
+  onRemoved,
+}: {
+  config: AppConfig | undefined;
+  onAdded: () => void;
+  onRemoved: () => void;
+}) {
+  const { t } = useI18n();
+  const queryClient = useQueryClient();
+  const cacheConfig = (saved: AppConfig) => {
+    queryClient.setQueryData(CONFIG, saved);
+    void queryClient.invalidateQueries({ queryKey: CONFIG });
+  };
+  const addMutation = useMutation({
+    mutationFn: async (draft: BackgroundDraft) => {
+      if (config === undefined || draft.name.trim() === '') {
+        return undefined;
+      }
+      const saved =
+        draft.sourceType === 'url'
+          ? await addCustomBackgroundUrl({ name: draft.name, url: draft.url })
+          : await importCustomBackgroundFile({
+              name: draft.name,
+              file: draft.file,
+              path: draft.nativePath,
+            });
+      return validateAddedShader(config.custom_backgrounds, saved, cacheConfig, t);
+    },
+    onSuccess: (saved) => {
+      if (saved === undefined) {
+        return;
+      }
+      cacheConfig(saved);
+      onAdded();
+      toast.success(t('Background added'));
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t('Could not add background')),
+  });
+  const removeMutation = useMutation({
+    mutationFn: removeCustomBackground,
+    onSuccess: (saved) => {
+      cacheConfig(saved);
+      onRemoved();
+      toast.success(t('Background removed'));
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t('Could not remove background')),
+  });
+
+  return { addMutation, removeMutation };
+}

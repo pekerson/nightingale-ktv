@@ -1,0 +1,62 @@
+target/
+.env
+
+# Site
+site/node_modules/
+site/dist/
+site/docs/book/
+site/.astro/
+
+# Local updater manifest staged before publishing
+latest.json
+
+# Local-only release/updater notes (not for the public repo)
+RELEASING.md
+
+# Mac Files
+**/.DS_Store
+
+**/__pycache__
+
+# JavaScript build output
+client/node_modules/
+client/dist/
+*.tsbuildinfo
+
+# Generated per-agent configuration and local agent state
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+QWEN.md
+REASONIX.md
+kilo.jsonc
+opencode.jsonc
+replit.md
+.agents/
+.aiassistant/
+.augment/
+.claude/
+.cline/
+.clinerules/
+.continue/
+.cursor/
+.devin/
+.factory/
+.goosehints
+.grok/
+.hermes.md
+.junie/
+.kilo/
+.kiro/
+.opencode/
+.pi/
+.pi-subagents/
+.qwen/
+.roo/
+.rovodev/
+.rules
+.takt/
+.trae/
+.windsurf/
+.github/copilot-instructions.md
+.github/instructions/

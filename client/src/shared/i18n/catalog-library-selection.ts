@@ -1,0 +1,31 @@
+export const librarySelectionChinese: Readonly<Record<string, string>> = {
+  'All matching songs': '当前筛选的全部歌曲',
+  'Select multiple songs': '多选歌曲',
+  'Hide bulk actions and keep selection': '收起批量操作，保留已选歌曲',
+  'Show bulk actions': '展开批量操作',
+  'Song selection': '歌曲多选',
+  'Select {title}': '选择《{title}》',
+  'Select songs or add to queue': '选择歌曲或加入播放队列',
+  'Selected {count} songs': '已选 {count} 首',
+  'Select loaded songs ({count})': '选择已加载的 {count} 首',
+  'Select all matching songs ({count})': '全选当前结果（{count} 首）',
+  'Clear selection': '取消全部选择',
+  'Done selecting': '退出多选',
+  'Analyze selected': '分析已选歌曲',
+  'Cancel selected analysis': '取消已选分析',
+  'Delete selected cache': '删除已选缓存',
+  'Loading all matching songs…': '正在读取全部结果，请稍候…',
+  'Selection is limited to the current list, search, and filters. New matches are not selected automatically.':
+    '已选歌曲仅属于当前列表及搜索、筛选范围；之后新增的匹配歌曲不会自动选中。',
+  'Selection scope changed. Select songs again.': '歌单、筛选或来源已改变，请重新选择歌曲。',
+  'The song list changed while loading. Please try again.': '读取期间歌曲列表发生变化，请重试。',
+  'Could not process selection: {error}': '无法处理已选歌曲：{error}',
+  'The selection changed. Review the updated count and confirm again.':
+    '已选歌曲发生变化，请核对更新后的数量并再次确认。',
+  'Selected analysis queued: {count}': '已加入 {count} 首歌曲进行分析',
+  'Selected analysis cancelled: {count}': '已取消 {count} 首歌曲的分析',
+  'Selected song caches deleted: {count}': '已删除 {count} 首歌曲的缓存',
+  'Delete cache for {count} selected songs?': '删除已选 {count} 首歌曲的缓存？',
+  'Only the selected song caches will be deleted. Original music files will be kept. Shared audio is counted once.':
+    '只删除已选歌曲的缓存，保留原始音乐文件。共享相同音频的条目按一首计算。',
+};

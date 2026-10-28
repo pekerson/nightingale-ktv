@@ -1,0 +1,243 @@
+import type { RefObject } from 'react';
+import { useMemo } from 'react';
+
+import { DIALOG_FOCUSABLE_SELECTOR, useDialogNav } from '@/features/menu/hooks/use-dialog-nav';
+import { PITCH_GRAPH_SCALE_MAX } from '@/features/playback/lib/display-scale';
+import {
+  MIC_LATENCY_MAX,
+  MIC_LATENCY_STEP,
+  MIC_MONITOR_GAIN_MAX,
+  MIC_MONITOR_GAIN_STEP,
+  NAV,
+  PLAYBACK_SCALE_MAX,
+  PLAYBACK_SCALE_MIN,
+  PLAYBACK_SCALE_STEP,
+  SETTINGS_TABS,
+  VOCAL_THRESHOLD_MAX,
+  VOCAL_THRESHOLD_MIN,
+  VOCAL_THRESHOLD_STEP,
+  getAnalysisNav,
+  getSettingsStops,
+  type SettingsTab,
+} from '@/features/settings/components/constants';
+import { cn } from '@/shared/utils/cn';
+
+const FOCUS_RING = 'relative z-10 ring-2 ring-primary';
+const NO_FOCUS_RING = 'focus-visible:ring-0 focus-visible:border-transparent';
+
+function getVisibleFocusables(container: HTMLElement) {
+  return Array.from(container.querySelectorAll<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR)).filter(
+    (el) => el.offsetWidth > 0 || el.offsetHeight > 0,
+  );
+}
+
+function segmentSlotFromFlatIndex(segmentSizes: readonly number[], flatIndex: number) {
+  let cursor = 0;
+
+  for (let segment = 0; segment < segmentSizes.length; segment++) {
+    const size = segmentSizes[segment] ?? 0;
+    if (flatIndex < cursor + size) {
+      return { segment, slot: flatIndex - cursor };
+    }
+    cursor += size;
+  }
+
+  return null;
+}
+
+type UseSettingsNavigationOptions = {
+  containerRef: RefObject<HTMLDivElement | null>;
+  enabled: boolean;
+  tab: SettingsTab;
+  isParakeet: boolean;
+  hasMultiChannelInput: boolean;
+  hasSecondOutput: boolean;
+  showLyrics: boolean;
+  showPitchGraph: boolean;
+  micMonitorGain: number;
+  appFontSize: number;
+  onAppFontSizeChange: (value: number) => void;
+  micLatencySec: number;
+  masterVolume: number;
+  lyricsScale: number;
+  pitchGraphScale: number;
+  vocalThresholdPct: number;
+  playbackRanges: readonly {
+    segment: number;
+    value: number;
+    min: number;
+    max: number;
+    step: number;
+    onChange: (value: number) => void;
+  }[];
+  onBack: () => void;
+  onTabChange: (tab: SettingsTab) => void;
+  onMicMonitorGainChange: (gain: number) => void;
+  onMicLatencyChange: (latencySec: number) => void;
+  onMasterVolumeChange: (volume: number) => void;
+  onLyricsScaleChange: (scale: number) => void;
+  onPitchGraphScaleChange: (scale: number) => void;
+  onVocalThresholdChange: (pct: number) => void;
+};
+
+export function useSettingsNavigation({
+  containerRef,
+  enabled,
+  tab,
+  isParakeet,
+  hasMultiChannelInput,
+  hasSecondOutput,
+  showLyrics,
+  showPitchGraph,
+  micMonitorGain,
+  appFontSize,
+  onAppFontSizeChange,
+  micLatencySec,
+  masterVolume,
+  lyricsScale,
+  pitchGraphScale,
+  vocalThresholdPct,
+  playbackRanges,
+  onBack,
+  onTabChange,
+  onMicMonitorGainChange,
+  onMicLatencyChange,
+  onMasterVolumeChange,
+  onLyricsScaleChange,
+  onPitchGraphScaleChange,
+  onVocalThresholdChange,
+}: UseSettingsNavigationOptions) {
+  const stops = useMemo(
+    () =>
+      getSettingsStops({
+        tab,
+        isParakeet,
+        hasMultiChannelInput,
+        hasSecondOutput,
+        showLyrics,
+        showPitchGraph,
+      }),
+    [hasMultiChannelInput, hasSecondOutput, isParakeet, showLyrics, showPitchGraph, tab],
+  );
+  const itemCount = useMemo(() => stops.reduce((sum, size) => sum + size, 0), [stops]);
+  const footerSegment = stops.length - 1;
+
+  const { isFocused, focusSegment } = useDialogNav({
+    open: enabled,
+    itemCount,
+    stops,
+    onBack,
+    containerRef,
+    onAction: (segment, slot, action) => {
+      const adjustGeneral = (): boolean => {
+        if (segment === footerSegment - 1) {
+          onAppFontSizeChange(Math.min(24, Math.max(12, appFontSize + (action.right ? 1 : -1))));
+          return true;
+        }
+        if (segment === NAV.general.micMonitorGain) {
+          const delta = action.right ? MIC_MONITOR_GAIN_STEP : -MIC_MONITOR_GAIN_STEP;
+          onMicMonitorGainChange(
+            Math.min(MIC_MONITOR_GAIN_MAX, Math.max(0, micMonitorGain + delta)),
+          );
+          return true;
+        }
+        if (segment === NAV.general.micLatency) {
+          const delta = action.right ? MIC_LATENCY_STEP : -MIC_LATENCY_STEP;
+          onMicLatencyChange(Math.min(MIC_LATENCY_MAX, Math.max(0, micLatencySec + delta)));
+          return true;
+        }
+        return false;
+      };
+
+      const adjustPlayback = (): boolean => {
+        const range = playbackRanges.find((item) => item.segment === segment);
+        if (range !== undefined) {
+          const delta = action.right ? range.step : -range.step;
+          range.onChange(
+            Math.min(
+              range.max,
+              Math.max(range.min, Math.round((range.value + delta) * 1000) / 1000),
+            ),
+          );
+          return true;
+        }
+        if (segment === NAV.playback.masterVolume) {
+          const delta = action.right ? 0.01 : -0.01;
+          onMasterVolumeChange(Math.min(1, Math.max(0, masterVolume + delta)));
+          return true;
+        }
+
+        const delta = action.right ? PLAYBACK_SCALE_STEP : -PLAYBACK_SCALE_STEP;
+        if (segment === NAV.playback.lyricsScale) {
+          onLyricsScaleChange(
+            Math.min(PLAYBACK_SCALE_MAX, Math.max(PLAYBACK_SCALE_MIN, lyricsScale + delta)),
+          );
+          return true;
+        }
+        if (segment === NAV.playback.pitchGraphScale) {
+          onPitchGraphScaleChange(
+            Math.min(PITCH_GRAPH_SCALE_MAX, Math.max(PLAYBACK_SCALE_MIN, pitchGraphScale + delta)),
+          );
+          return true;
+        }
+        return false;
+      };
+
+      const adjustAnalysis = (): boolean => {
+        if (segment !== getAnalysisNav(isParakeet).vocalThreshold) {
+          return false;
+        }
+        const delta = action.right ? VOCAL_THRESHOLD_STEP : -VOCAL_THRESHOLD_STEP;
+        onVocalThresholdChange(
+          Math.min(VOCAL_THRESHOLD_MAX, Math.max(VOCAL_THRESHOLD_MIN, vocalThresholdPct + delta)),
+        );
+        return true;
+      };
+
+      if (segment === NAV.tabSegment && action.confirm) {
+        onTabChange(SETTINGS_TABS[slot].value);
+        return true;
+      }
+
+      if (!action.left && !action.right) {
+        return false;
+      }
+
+      if (tab === 'general') {
+        return adjustGeneral();
+      }
+      return tab === 'playback' ? adjustPlayback() : adjustAnalysis();
+    },
+  });
+
+  const getFocusClassName = (segment: number, slot = 0) => {
+    return cn(NO_FOCUS_RING, isFocused(segment, slot) && FOCUS_RING);
+  };
+
+  const syncFocusFromElement = (target: EventTarget | null) => {
+    if (!containerRef.current || !(target instanceof Element)) {
+      return;
+    }
+
+    const focusable = target.closest<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR);
+    if (!focusable || !containerRef.current.contains(focusable)) {
+      return;
+    }
+
+    const flatIndex = getVisibleFocusables(containerRef.current).indexOf(focusable);
+    if (flatIndex < 0) {
+      return;
+    }
+
+    const next = segmentSlotFromFlatIndex(stops, flatIndex);
+    if (next) {
+      focusSegment(next.segment, next.slot);
+    }
+  };
+
+  return {
+    footerSegment,
+    getFocusClassName,
+    syncFocusFromElement,
+  };
+}
