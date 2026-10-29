@@ -16,7 +16,7 @@
 - **原工程官网与使用文档**：[nightingale.cafe](https://nightingale.cafe/) · [用户指南](https://nightingale.cafe/docs/)
 - **本仓库**：[pekerson/nightingale-ktv](https://github.com/pekerson/nightingale-ktv)
 - **许可证**：沿用原工程的 GPL-3.0-or-later，见 [LICENSE](LICENSE)。
-- **旧版 v18 Windows x64 测试安装包（不含回放增益）**：[v1.3.0-ktv18-test Release](https://github.com/pekerson/nightingale-ktv/releases/tag/v1.3.0-ktv18-test)；SHA-256：`16B2974D719891EA16A00B095DA303FEAA85A0B14D0B0675F3A76B8CA237DE3E`。
+- **Windows x64 测试安装包（含回放增益）**：[v1.3.0-ktv19-test Release](https://github.com/pekerson/nightingale-ktv/releases/tag/v1.3.0-ktv19-test)；安装包 SHA-256：`73E2769A30E621E8B110BE2B5C4507C14B9CB78CA3EDA720CF1436132E37EDEC`。同页提供对应源码 ZIP 与校验文件。
 
 > 本仓库是当前改造版的精简源码快照，保留应用源码、构建配置、部署脚本和许可证；不包含原工程网站、GitHub Actions、代理规则或构建缓存；安装包作为独立 Release 附件提供，不进入源码目录。下文的“v19”是本地改造阶段编号，应用清单仍使用原工程的 1.3.0 版本号。
 
