@@ -212,6 +212,10 @@ pub struct AppConfig {
     pub guide_volume: Option<f64>,
     pub master_volume: Option<f64>,
     #[serde(default)]
+    pub replay_gain_enabled: Option<bool>,
+    #[serde(default)]
+    pub replay_gain_preamp_db: Option<f64>,
+    #[serde(default)]
     pub instrumental_volume: Option<f64>,
     #[serde(default)]
     pub audio_outputs: Option<Vec<AudioOutputRoute>>,
@@ -333,6 +337,8 @@ impl Default for AppConfig {
             last_background: None,
             guide_volume: None,
             master_volume: None,
+            replay_gain_enabled: None,
+            replay_gain_preamp_db: None,
             instrumental_volume: None,
             audio_outputs: None,
             app_font_size: None,

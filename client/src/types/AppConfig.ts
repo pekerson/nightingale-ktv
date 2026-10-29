@@ -23,6 +23,8 @@ export type AppConfig = {
   last_background: BackgroundSelection | null;
   guide_volume: number | null;
   master_volume: number | null;
+  replay_gain_enabled: boolean | null;
+  replay_gain_preamp_db: number | null;
   instrumental_volume: number | null;
   audio_outputs: Array<AudioOutputRoute> | null;
   app_font_size: number | null;

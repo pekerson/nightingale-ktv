@@ -16,9 +16,9 @@ This is a personal modification of [Nightingale](https://github.com/rzru/nightin
 - **Upstream website and documentation:** [nightingale.cafe](https://nightingale.cafe/) · [user guide](https://nightingale.cafe/docs/)
 - **This repository:** [pekerson/nightingale-ktv](https://github.com/pekerson/nightingale-ktv)
 - **License:** GPL-3.0-or-later, retained from upstream; see [LICENSE](LICENSE).
-- **Windows x64 test installer:** [v1.3.0-ktv18-test Release](https://github.com/pekerson/nightingale-ktv/releases/tag/v1.3.0-ktv18-test); SHA-256: `16B2974D719891EA16A00B095DA303FEAA85A0B14D0B0675F3A76B8CA237DE3E`.
+- **Earlier v18 Windows x64 test installer (without ReplayGain):** [v1.3.0-ktv18-test Release](https://github.com/pekerson/nightingale-ktv/releases/tag/v1.3.0-ktv18-test); SHA-256: `16B2974D719891EA16A00B095DA303FEAA85A0B14D0B0675F3A76B8CA237DE3E`.
 
-> This repository is a trimmed source snapshot of the modified edition. It includes application source, build configuration, deployment scripts, and the license. It does not include the upstream website, GitHub Actions, agent rules, or build caches. The installer is a separate Release asset, not a file in the source tree. “v18” below is a local modification-stage number; the application manifests still use the upstream 1.3.0 version number.
+> This repository is a trimmed source snapshot of the modified edition. It includes application source, build configuration, deployment scripts, and the license. It does not include the upstream website, GitHub Actions, agent rules, or build caches. The installer is a separate Release asset, not a file in the source tree. “v19” below is a local modification-stage number; the application manifests still use the upstream 1.3.0 version number.
 
 ## Development approach and support
 
@@ -68,6 +68,7 @@ The following summarizes the upstream v1.3.0 [README](https://github.com/rzru/ni
 ### Audio devices, mixing, and key
 
 - **Three independent volume controls:** Adjust accompaniment, dry vocals, and microphone monitoring during playback. Each starts at 100% for a new song or replay. For songs with a separate dry-vocal stem, its volume changes the balance between the original vocal and accompaniment while singing.
+- **ReplayGain normalization:** Enable it in Settings (off by default). The player reads track ReplayGain from the original song, falling back to album gain when track gain is absent. The preamp is adjustable from 0 to 10 dB (default 0 dB). Accompaniment and dry vocals receive the same gain; microphone monitoring is unaffected. Songs without valid tags keep their original level, and a valid peak tag limits amplification to reduce clipping risk.
 - **Device selection and dual output:** Select a microphone and up to two speakers from drop-down lists. Choose independently whether each speaker plays accompaniment, dry vocals, and microphone monitoring.
 - **Live key adjustment:** The singing view shows the current key and has key-up/key-down buttons. Playback position and current attempt state are preserved while changing key.
 - **Configurable shortcuts:** Rebind 24 existing keyboard actions in Settings. Defaults include Space for pause/resume, Left/Right for seeking 5 seconds, Esc for exit confirmation, and Up/Down for accompaniment volume in 10% steps. With NumLock off, numpad 8/2 also act as Up/Down.
@@ -90,7 +91,7 @@ This section combines inherited upstream capabilities with this edition’s addi
 | Prepare songs | Separate vocals/accompaniment, recognize and align lyrics, analyze reference pitch, and cache results; automatically analyze existing and new songs according to global or per-playlist settings. |
 | Manage lyrics | Use LRCLIB, manual lyrics, embedded audio lyrics, matching LRC, server lyrics, or AI recognition; edit standard/enhanced word-timed LRC and calibrate the first line per song. |
 | Sing and practice | Follow synchronized lyrics, score microphone pitch, sing with multiple players, adjust key and tempo; drag the timeline, pause, seek, replay, skip intro/outro, or skip song; choose whether a song with manual seeking counts toward scores. |
-| Mix and route audio | Master volume and separate accompaniment/dry-vocal/microphone-monitor volumes, microphone latency compensation; select a microphone and up to two output devices with independent source selection; change key while singing. |
+| Mix and route audio | Master volume, separate accompaniment/dry-vocal/microphone-monitor volumes, optional ReplayGain normalization with a 0–10 dB preamp, and microphone latency compensation; select a microphone and up to two output devices with independent source selection; change key while singing. |
 | Queue and scores | Playback queue, quick add and move-to-top, Session mode, profiles, and leaderboards; see results at completion or after skipping, and optionally auto-advance to the next song. |
 | Visuals and MV | Song video, shaders, Pixabay and custom backgrounds; associate a separate silent MV per song; control lyric and pitch-graph visibility, position, and size; preview upcoming reference pitch and collapse the progress area. |
 | Input and delivery | English and Chinese interface, configurable shortcuts, keyboard/gamepad/touch input; retains desktop and self-hosted web architecture. |

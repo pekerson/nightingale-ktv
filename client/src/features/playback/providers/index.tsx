@@ -24,6 +24,13 @@ type PlaybackProvidersProps = {
   children: ReactNode;
 };
 
+function replayGainSettings(config: AppConfig | null) {
+  return {
+    enabled: config?.replay_gain_enabled === true,
+    preampDb: config?.replay_gain_preamp_db ?? 0,
+  };
+}
+
 export function PlaybackProviders({
   song,
   config,
@@ -32,6 +39,7 @@ export function PlaybackProviders({
   onSongPrepared,
   children,
 }: PlaybackProvidersProps) {
+  const replayGain = replayGainSettings(config);
   return (
     <PlaybackTransportProvider
       song={song}
@@ -39,6 +47,8 @@ export function PlaybackProviders({
       initialGuideVolume={config?.guide_volume ?? 1}
       initialMasterVolume={config?.master_volume ?? 1}
       initialInstrumentalVolume={config?.instrumental_volume ?? 1}
+      replayGainEnabled={replayGain.enabled}
+      replayGainPreampDb={replayGain.preampDb}
       scoreAfterSeek={config?.score_after_seek === true}
       onRestart={onRestart}
     >

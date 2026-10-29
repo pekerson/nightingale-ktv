@@ -64,6 +64,8 @@ export const tauriPlaybackAdapter: PlaybackAdapter = {
     return {
       instrumental: tauriToMediaUrl(paths.instrumental),
       vocals: paths.vocals === null ? null : tauriToMediaUrl(paths.vocals),
+      replay_gain_db: paths.replay_gain_db,
+      replay_peak: paths.replay_peak,
     };
   },
 };
@@ -91,6 +93,8 @@ export const webPlaybackAdapter: PlaybackAdapter = {
     return {
       instrumental: webToMediaUrl(paths.instrumental),
       vocals: paths.vocals === null ? null : webToMediaUrl(paths.vocals),
+      replay_gain_db: paths.replay_gain_db,
+      replay_peak: paths.replay_peak,
     };
   },
 };

@@ -96,12 +96,22 @@ const speakerSettings = (config: AppConfig | undefined) => ({
   hasSecondOutput: (config?.audio_outputs?.length ?? 0) > 1,
 });
 
+const replayGainSettings = (config: AppConfig | undefined) => ({
+  replayGainEnabled: config?.replay_gain_enabled ?? DEFAULTS.replay_gain_enabled,
+  replayGainPreampDb: Math.min(
+    10,
+    Math.max(0, config?.replay_gain_preamp_db ?? DEFAULTS.replay_gain_preamp_db),
+  ),
+});
+
 const playbackSettings = (config: AppConfig | undefined) => {
   if (!config) {
     return {
       mode: DEFAULTS.playback_mode,
       scoreAfterSeek: DEFAULTS.score_after_seek,
       masterVolume: DEFAULTS.master_volume,
+      replayGainEnabled: DEFAULTS.replay_gain_enabled,
+      replayGainPreampDb: DEFAULTS.replay_gain_preamp_db,
       lyricsVertical: DEFAULTS.lyrics_vertical_position,
       lyricsHorizontal: DEFAULTS.lyrics_horizontal_position,
       lyricsScale: DEFAULT_PLAYBACK_SCALE,
@@ -116,6 +126,7 @@ const playbackSettings = (config: AppConfig | undefined) => {
     mode: config.playback_mode ?? DEFAULTS.playback_mode,
     scoreAfterSeek: config.score_after_seek ?? DEFAULTS.score_after_seek,
     masterVolume: config.master_volume ?? DEFAULTS.master_volume,
+    ...replayGainSettings(config),
     lyricsVertical: config.lyrics_vertical_position ?? DEFAULTS.lyrics_vertical_position,
     lyricsHorizontal: config.lyrics_horizontal_position ?? DEFAULTS.lyrics_horizontal_position,
     lyricsScale: clampPlaybackScale(config.lyrics_scale),
@@ -234,12 +245,14 @@ function SeekScoringSetting({
 
 function VisibilitySetting({
   label,
+  hint,
   enabled,
   segment,
   onChange,
   getFocusClassName,
 }: {
   label: string;
+  hint?: string;
   enabled: boolean;
   segment: number;
   onChange: (enabled: boolean) => void;
@@ -249,6 +262,7 @@ function VisibilitySetting({
   return (
     <Field>
       <Label>{label}</Label>
+      {hint !== undefined && <Hint>{hint}</Hint>}
       <ButtonGroup aria-label={label}>
         <Button
           variant={enabled ? 'outline' : 'default'}
@@ -367,6 +381,10 @@ export const SettingsPage = () => {
   const micLatencySec = micLatencySecInput ?? general.micLatency;
   const [masterVolumeInput, setMasterVolume] = useState<number | null>(null);
   const masterVolume = masterVolumeInput ?? playback.masterVolume;
+  const [replayGainEnabledInput, setReplayGainEnabled] = useState<boolean | null>(null);
+  const replayGainEnabled = pendingValue(replayGainEnabledInput, playback.replayGainEnabled);
+  const [replayGainPreampInput, setReplayGainPreamp] = useState<number | null>(null);
+  const replayGainPreampDb = pendingValue(replayGainPreampInput, playback.replayGainPreampDb);
   const [lyricsVerticalInput, setLyricsVertical] = useState<string | null>(null);
   const lyricsVertical = pendingValue(lyricsVerticalInput, playback.lyricsVertical);
   const [lyricsHorizontalInput, setLyricsHorizontal] = useState<string | null>(null);
@@ -421,6 +439,11 @@ export const SettingsPage = () => {
     mutate({ master_volume: volume });
   };
 
+  const updateReplayGainPreamp = (value: number) => {
+    setReplayGainPreamp(value);
+    mutate({ replay_gain_preamp_db: value });
+  };
+
   const updateLyricsScale = (scale: number) => {
     setLyricsScale(scale);
     mutate({ lyrics_scale: scale });
@@ -452,6 +475,14 @@ export const SettingsPage = () => {
       onChange: (value: number) => updatePlaybackRange(key, value),
     };
   });
+  playbackRanges.push({
+    segment: NAV.playback.replayGainPreamp,
+    min: 0,
+    max: 10,
+    step: 0.5,
+    value: replayGainPreampDb,
+    onChange: updateReplayGainPreamp,
+  });
 
   const toggleWindowMode = (fullscreen: boolean) => {
     setIsFullScreen(fullscreen);
@@ -464,6 +495,8 @@ export const SettingsPage = () => {
     setMicMonitorGain(DEFAULTS.mic_monitor_gain);
     setMicLatencySec(DEFAULTS.mic_latency_compensation_sec);
     setMasterVolume(DEFAULTS.master_volume);
+    setReplayGainEnabled(DEFAULTS.replay_gain_enabled);
+    setReplayGainPreamp(DEFAULTS.replay_gain_preamp_db);
     setLyricsVertical(DEFAULTS.lyrics_vertical_position);
     setLyricsHorizontal(DEFAULTS.lyrics_horizontal_position);
     setLyricsScale(DEFAULTS.lyrics_scale);
@@ -683,6 +716,40 @@ export const SettingsPage = () => {
                     value={[masterVolumePct]}
                     onValueChange={([pct]) => updateMasterVolume(pct / 100)}
                     className={getFocusClassName(NAV.playback.masterVolume)}
+                  />
+                </Field>
+
+                <VisibilitySetting
+                  label={t('Enable ReplayGain')}
+                  hint={t(
+                    'Use track gain, or album gain if track gain is missing. Songs without valid tags keep their original volume.',
+                  )}
+                  enabled={replayGainEnabled}
+                  segment={NAV.playback.replayGainEnabled}
+                  onChange={(replay_gain_enabled) => {
+                    setReplayGainEnabled(replay_gain_enabled);
+                    mutate({ replay_gain_enabled });
+                  }}
+                  getFocusClassName={getFocusClassName}
+                />
+
+                <Field data-nav-passthrough>
+                  <Label>{t('ReplayGain preamp')}</Label>
+                  <Hint>
+                    {t(
+                      'Extra gain for tagged songs: {value} dB. A peak tag may limit amplification to avoid clipping.',
+                      { value: replayGainPreampDb.toFixed(1) },
+                    )}
+                  </Hint>
+                  <Slider
+                    min={0}
+                    max={10}
+                    step={0.5}
+                    value={[replayGainPreampDb]}
+                    aria-label={t('ReplayGain preamp')}
+                    aria-valuetext={`${replayGainPreampDb.toFixed(1)} dB`}
+                    onValueChange={([value]) => updateReplayGainPreamp(value)}
+                    className={getFocusClassName(NAV.playback.replayGainPreamp)}
                   />
                 </Field>
 

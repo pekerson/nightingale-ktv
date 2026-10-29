@@ -760,6 +760,7 @@ fn validate_config_value(key: &str, value: &Value) -> Result<(), CommandError> {
         }
         "pitch_graph_scale" => Some((0.5, 5.0)),
         "instrumental_volume" => Some((0.0, 1.0)),
+        "replay_gain_preamp_db" => Some((0.0, 10.0)),
         _ => None,
     };
     let positions = match key {
@@ -951,6 +952,8 @@ fn save_config_cmd(state: &CommandState, events: EventEmitter, payload: Value) -
     config.score_after_seek = current.score_after_seek;
     config.instrumental_volume = current.instrumental_volume;
     config.guide_volume = current.guide_volume;
+    config.replay_gain_enabled = current.replay_gain_enabled;
+    config.replay_gain_preamp_db = current.replay_gain_preamp_db;
     config.mic_monitor_gain = current.mic_monitor_gain;
     config.audio_outputs = current.audio_outputs;
     config.app_font_size = current.app_font_size;

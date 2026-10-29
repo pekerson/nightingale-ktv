@@ -104,6 +104,8 @@ export const appConfigSchema: z.ZodType<AppConfig> = z.object({
   last_background: backgroundSelectionSchema.nullable(),
   guide_volume: nullableNumber,
   master_volume: nullableNumber,
+  replay_gain_enabled: nullableBoolean.default(null),
+  replay_gain_preamp_db: nullableNumber.default(null),
   instrumental_volume: nullableNumber.default(null),
   app_font_size: nullableNumber.default(null),
   playback_progress_scale: nullableNumber.default(null),

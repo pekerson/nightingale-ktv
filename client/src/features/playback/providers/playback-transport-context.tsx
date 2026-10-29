@@ -85,6 +85,8 @@ type PlaybackTransportProviderProps = {
   initialGuideVolume: number;
   initialMasterVolume: number;
   initialInstrumentalVolume: number;
+  replayGainEnabled: boolean;
+  replayGainPreampDb: number;
   scoreAfterSeek: boolean;
   onRestart: () => void;
   children: ReactNode;
@@ -96,6 +98,8 @@ export function PlaybackTransportProvider({
   initialGuideVolume,
   initialMasterVolume,
   initialInstrumentalVolume,
+  replayGainEnabled,
+  replayGainPreampDb,
   scoreAfterSeek,
   onRestart,
   children,
@@ -168,6 +172,8 @@ export function PlaybackTransportProvider({
       guide: initialGuideVolumeSnapshot,
       master: initialMasterVolumeSnapshot,
       instrumental: initialInstrumentalSnapshot,
+      replayGainEnabled,
+      replayGainPreampDb,
     },
     stemsReady,
   );
@@ -176,8 +182,12 @@ export function PlaybackTransportProvider({
     setGuideVolume,
     setInstrumentalVolume,
     setMasterVolume,
+    setReplayGainSettings,
     isReady: audioReadyForGain,
   } = audio;
+  useEffect(() => {
+    setReplayGainSettings({ enabled: replayGainEnabled, preampDb: replayGainPreampDb });
+  }, [replayGainEnabled, replayGainPreampDb, setReplayGainSettings]);
   useEffect(() => {
     if (audioReadyForGain) {
       setGuideVolume(initialGuideVolume);

@@ -140,6 +140,8 @@ export const DEFAULTS = {
   auto_analyze: false,
   mv_directory: null,
   master_volume: 1,
+  replay_gain_enabled: false,
+  replay_gain_preamp_db: 0,
   instrumental_volume: 1,
   guide_volume: 1,
   audio_outputs: null,
@@ -176,6 +178,8 @@ export const DEFAULTS = {
   | 'auto_analyze'
   | 'mv_directory'
   | 'master_volume'
+  | 'replay_gain_enabled'
+  | 'replay_gain_preamp_db'
   | 'instrumental_volume'
   | 'guide_volume'
   | 'audio_outputs'
@@ -229,23 +233,25 @@ export const NAV = {
     introSkipLead: 5,
     autoAdvanceDelay: 6,
     masterVolume: 7,
-    showLyrics: 8,
-    lyricsVerticalPosition: 9,
-    lyricsHorizontalPosition: 10,
-    lyricsOffsetX: 11,
-    lyricsOffsetY: 12,
-    lyricsScale: 13,
-    lyricsRomanizationMode: 14,
-    showPitchGraph: 15,
-    pitchHorizontal: 16,
-    pitchVertical: 17,
-    pitchGraphOffsetX: 18,
-    pitchGraphOffsetY: 19,
-    pitchGraphScale: 20,
-    pitchGraphWindow: 21,
-    progressScale: 22,
-    statusScale: 23,
-    controlsScale: 24,
+    replayGainEnabled: 8,
+    replayGainPreamp: 9,
+    showLyrics: 10,
+    lyricsVerticalPosition: 11,
+    lyricsHorizontalPosition: 12,
+    lyricsOffsetX: 13,
+    lyricsOffsetY: 14,
+    lyricsScale: 15,
+    lyricsRomanizationMode: 16,
+    showPitchGraph: 17,
+    pitchHorizontal: 18,
+    pitchVertical: 19,
+    pitchGraphOffsetX: 20,
+    pitchGraphOffsetY: 21,
+    pitchGraphScale: 22,
+    pitchGraphWindow: 23,
+    progressScale: 24,
+    statusScale: 25,
+    controlsScale: 26,
   },
 } as const;
 
@@ -437,6 +443,8 @@ export function getSettingsStops({
       2,
       1,
       1,
+      1,
+      2,
       1,
       2,
       ...(showLyrics ? [1, 1, 1, 1, 1, 2] : [0, 0, 0, 0, 0, 0]),

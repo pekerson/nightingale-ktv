@@ -3,8 +3,9 @@
  * rAF tick that notifies subscribers for visuals (background sync, lyrics, HUD).
  * The returned API object is referentially stable across renders when its fields are unchanged.
  *
- * Graph: instrumental buffer → instrumental gain → master gain → destination;
- * vocals buffer → guide gain → master gain.
+ * Graph: instrumental buffer → instrumental gain → output router;
+ * vocals buffer → guide gain → output router. Song ReplayGain is multiplied
+ * into both stem gains, leaving microphone monitoring and slider values alone.
  * Playback position is derived from AudioContext.currentTime and a (offset, contextTimeAtStart)
  * pair because BufferSourceNode is one-shot: pause/seek recreate sources rather than mutating time.
  */
@@ -14,6 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AudioOutputRouter } from '@/bridge/audio-output-router';
 import type { PlaybackAdapter } from '@/bridge/playback';
 import { playbackAdapter } from '@/bridge/playback';
+import type { AudioPaths } from '@/types/Transcript';
 
 export type TimeSubscriber = (time: number) => void;
 
@@ -21,7 +23,43 @@ type InitialVolumes = {
   guide: number;
   master: number;
   instrumental: number;
+  replayGainEnabled: boolean;
+  replayGainPreampDb: number;
 };
+
+type ReplayGainSettings = {
+  enabled: boolean;
+  preampDb: number;
+};
+
+function replayGainMultiplier(
+  gainDb: number | null,
+  peak: number | null,
+  settings: ReplayGainSettings,
+): number {
+  if (!settings.enabled || gainDb === null || !Number.isFinite(gainDb)) {
+    return 1;
+  }
+  const preampDb = Number.isFinite(settings.preampDb)
+    ? Math.max(0, Math.min(10, settings.preampDb))
+    : 0;
+  const requested = 10 ** ((gainDb + preampDb) / 20);
+  if (!Number.isFinite(requested) || requested <= 0) {
+    return 1;
+  }
+  return peak !== null && Number.isFinite(peak) && peak > 0
+    ? Math.min(requested, 1 / peak)
+    : requested;
+}
+
+function replayGainMetadata(paths: AudioPaths): { gainDb: number | null; peak: number | null } {
+  const gainDb = paths.replay_gain_db;
+  const peak = paths.replay_peak;
+  return {
+    gainDb: typeof gainDb === 'number' && Number.isFinite(gainDb) ? gainDb : null,
+    peak: typeof peak === 'number' && Number.isFinite(peak) && peak > 0 ? peak : null,
+  };
+}
 
 export type AudioPlayer = {
   getCurrentTime: () => number;
@@ -43,6 +81,7 @@ export type AudioPlayer = {
   setGuideVolume: (v: number) => void;
   setInstrumentalVolume: (v: number) => void;
   setMasterVolume: (v: number) => void;
+  setReplayGainSettings: (settings: ReplayGainSettings) => void;
   reloadBuffers: (canCommit: () => boolean) => Promise<boolean>;
   cleanup: () => void;
   getVocalsBuffer: () => AudioBuffer | null;
@@ -60,6 +99,8 @@ export function useAudioPlayer(
     guide: initialGuideVolume,
     master: initialMasterVolume,
     instrumental: initialInstrumentalVolume,
+    replayGainEnabled: initialReplayGainEnabled,
+    replayGainPreampDb: initialReplayGainPreampDb,
   } = initialVolumes;
   const routerRef = useRef<AudioOutputRouter | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
@@ -69,6 +110,14 @@ export function useAudioPlayer(
   const vocalsSrcRef = useRef<AudioBufferSourceNode | null>(null);
   const vocalsGainRef = useRef<GainNode | null>(null);
   const instrumentalGainRef = useRef<GainNode | null>(null);
+  const guideVolumeRef = useRef(initialGuideVolume);
+  const instrumentalVolumeRef = useRef(initialInstrumentalVolume);
+  const replayGainDbRef = useRef<number | null>(null);
+  const replayPeakRef = useRef<number | null>(null);
+  const replayGainSettingsRef = useRef<ReplayGainSettings>({
+    enabled: initialReplayGainEnabled,
+    preampDb: initialReplayGainPreampDb,
+  });
   const rafRef = useRef<number>(0);
   const currentTimeRef = useRef(0);
   const subscribersRef = useRef<Set<TimeSubscriber>>(new Set());
@@ -89,6 +138,38 @@ export function useAudioPlayer(
   const [guideVolume, setGuideVolumeState] = useState(initialGuideVolume);
   const [instrumentalVolume, setInstrumentalVolumeState] = useState(initialInstrumentalVolume);
   const [guideAvailable, setGuideAvailable] = useState(true);
+
+  const applyReplayGain = useCallback(() => {
+    const multiplier = replayGainMultiplier(
+      replayGainDbRef.current,
+      replayPeakRef.current,
+      replayGainSettingsRef.current,
+    );
+    if (vocalsGainRef.current) {
+      vocalsGainRef.current.gain.value = guideVolumeRef.current * multiplier;
+    }
+    if (instrumentalGainRef.current) {
+      instrumentalGainRef.current.gain.value = instrumentalVolumeRef.current * multiplier;
+    }
+  }, []);
+
+  const applyReplayGainFromPaths = useCallback(
+    (paths: AudioPaths) => {
+      const { gainDb, peak } = replayGainMetadata(paths);
+      replayGainDbRef.current = gainDb;
+      replayPeakRef.current = peak;
+      applyReplayGain();
+    },
+    [applyReplayGain],
+  );
+
+  const setReplayGainSettings = useCallback(
+    (settings: ReplayGainSettings) => {
+      replayGainSettingsRef.current = settings;
+      applyReplayGain();
+    },
+    [applyReplayGain],
+  );
 
   const getVocalsBuffer = useCallback(() => vocalsBufRef.current, []);
 
@@ -213,17 +294,21 @@ export function useAudioPlayer(
     startOffsetRef.current = 0;
     startContextTimeRef.current = 0;
     currentTimeRef.current = 0;
+    replayGainDbRef.current = null;
+    replayPeakRef.current = null;
+    guideVolumeRef.current = Math.max(0, Math.min(1, initialGuideVolume));
+    instrumentalVolumeRef.current = Math.max(0, Math.min(1, initialInstrumentalVolume));
 
     const ctx = new AudioContext();
     ctxRef.current = ctx;
 
     const instrumentalGainNode = ctx.createGain();
-    instrumentalGainNode.gain.value = Math.max(0, Math.min(1, initialInstrumentalVolume));
+    instrumentalGainNode.gain.value = instrumentalVolumeRef.current;
 
     instrumentalGainRef.current = instrumentalGainNode;
 
     const gainNode = ctx.createGain();
-    gainNode.gain.value = Math.max(0, Math.min(1, initialGuideVolume));
+    gainNode.gain.value = guideVolumeRef.current;
 
     vocalsGainRef.current = gainNode;
 
@@ -244,6 +329,7 @@ export function useAudioPlayer(
 
         const vocalsUrl = paths.vocals;
         setGuideAvailable(vocalsUrl !== null);
+        applyReplayGainFromPaths(paths);
 
         const [instData, vocData] = await Promise.all([
           fetch(paths.instrumental).then((r) => {
@@ -338,6 +424,8 @@ export function useAudioPlayer(
       vocalsBufRef.current = null;
       vocalsGainRef.current = null;
       instrumentalGainRef.current = null;
+      replayGainDbRef.current = null;
+      replayPeakRef.current = null;
       if (ctx.state !== 'closed') {
         void ctx.close();
       }
@@ -350,6 +438,7 @@ export function useAudioPlayer(
     initialGuideVolume,
     initialMasterVolume,
     initialInstrumentalVolume,
+    applyReplayGainFromPaths,
     startSources,
     stopSources,
   ]);
@@ -396,23 +485,26 @@ export function useAudioPlayer(
     [stopSources, startSources, notifySubscribers],
   );
 
-  const setGuideVolume = useCallback((v: number) => {
-    const clamped = Math.max(0, Math.min(1, v));
+  const setGuideVolume = useCallback(
+    (v: number) => {
+      const clamped = Math.max(0, Math.min(1, v));
 
-    setGuideVolumeState(clamped);
+      setGuideVolumeState(clamped);
+      guideVolumeRef.current = clamped;
+      applyReplayGain();
+    },
+    [applyReplayGain],
+  );
 
-    if (vocalsGainRef.current) {
-      vocalsGainRef.current.gain.value = clamped;
-    }
-  }, []);
-
-  const setInstrumentalVolume = useCallback((value: number) => {
-    const clamped = Math.max(0, Math.min(1, value));
-    setInstrumentalVolumeState(clamped);
-    if (instrumentalGainRef.current) {
-      instrumentalGainRef.current.gain.value = clamped;
-    }
-  }, []);
+  const setInstrumentalVolume = useCallback(
+    (value: number) => {
+      const clamped = Math.max(0, Math.min(1, value));
+      setInstrumentalVolumeState(clamped);
+      instrumentalVolumeRef.current = clamped;
+      applyReplayGain();
+    },
+    [applyReplayGain],
+  );
 
   const setMasterVolume = useCallback((value: number) => {
     routerRef.current?.setVolume(Math.max(0, Math.min(1, value)));
@@ -440,6 +532,7 @@ export function useAudioPlayer(
       if (isCancelled() || finishedRef.current || !canCommit()) {
         return false;
       }
+      applyReplayGainFromPaths(paths);
       const position = Math.min(getCurrentTime(), Math.max(0, instrumental.duration - 0.05));
       const wasPlaying = playingRef.current;
       stopSources();
@@ -455,7 +548,15 @@ export function useAudioPlayer(
       notifySubscribers(position);
       return true;
     },
-    [adapter, fileHash, getCurrentTime, notifySubscribers, startSources, stopSources],
+    [
+      adapter,
+      applyReplayGainFromPaths,
+      fileHash,
+      getCurrentTime,
+      notifySubscribers,
+      startSources,
+      stopSources,
+    ],
   );
 
   const cleanup = useCallback(() => {
@@ -493,6 +594,7 @@ export function useAudioPlayer(
       setGuideVolume,
       setInstrumentalVolume,
       setMasterVolume,
+      setReplayGainSettings,
       reloadBuffers,
       cleanup,
       getVocalsBuffer,
@@ -517,6 +619,7 @@ export function useAudioPlayer(
       setGuideVolume,
       setInstrumentalVolume,
       setMasterVolume,
+      setReplayGainSettings,
       reloadBuffers,
       cleanup,
       getVocalsBuffer,

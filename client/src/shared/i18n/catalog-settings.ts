@@ -34,6 +34,12 @@ export const settingsChinese: Readonly<Record<string, string>> = {
   'The center line is now. History appears on the left and upcoming reference pitch on the right.':
     '中间竖线表示当前时间，左侧显示历史，右侧显示接下来的参考音高。',
   'Count scores after seeking': '跳转后计入成绩',
+  'Enable ReplayGain': '启用回放增益',
+  'Use track gain, or album gain if track gain is missing. Songs without valid tags keep their original volume.':
+    '优先使用曲目增益，缺少时使用专辑增益。没有有效标签的歌曲保持原音量。',
+  'ReplayGain preamp': '回放增益前置增益',
+  'Extra gain for tagged songs: {value} dB. A peak tag may limit amplification to avoid clipping.':
+    '仅对有回放增益标签的歌曲额外增益：{value} dB。有峰值标签时可能限制放大量以防削波。',
   'When enabled, dragging the progress bar or using the seek buttons still records scores. Pause and resume do not affect scoring. Applies to the current song until it finishes.':
     '开启后，拖动进度条或使用跳转按钮仍会记录成绩。暂停和继续不影响计分。对尚未结束的当前歌曲生效。',
   'Clearing vendor folder before migration...': '正在迁移前清理运行工具文件夹…',

@@ -24,4 +24,6 @@ export type Transcript = {
 export type AudioPaths = {
   instrumental: string;
   vocals: string | null;
+  replay_gain_db: number | null;
+  replay_peak: number | null;
 };

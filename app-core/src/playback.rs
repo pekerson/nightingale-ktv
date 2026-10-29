@@ -11,6 +11,7 @@ use ts_rs::TS;
 use crate::cache::{CacheDir, normalize_tempo, videos_dir};
 use crate::error::NightingaleError;
 use crate::library_db;
+use crate::replay_gain::{self, ReplayGain};
 use crate::song::{Song, SongOrigin};
 use crate::vendor::{ffmpeg_path, silent_command};
 
@@ -20,6 +21,21 @@ pub struct AudioPaths {
     /// `None` for LRC-provided songs played without stem separation: playback
     /// uses the original mix as the instrumental and hides the guide control.
     pub vocals: Option<String>,
+    pub replay_gain_db: Option<f64>,
+    pub replay_peak: Option<f64>,
+}
+
+fn audio_paths(
+    instrumental: String,
+    vocals: Option<String>,
+    replay: Option<ReplayGain>,
+) -> AudioPaths {
+    AudioPaths {
+        instrumental,
+        vocals,
+        replay_gain_db: replay.map(|value| value.gain_db),
+        replay_peak: replay.and_then(|value| value.peak),
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -116,9 +132,24 @@ fn resolve_original_media(song: &Song, cache: &CacheDir) -> String {
     }
 }
 
+fn source_replay_gain(song: &Song) -> Option<ReplayGain> {
+    let source = song
+        .usdx
+        .as_ref()
+        .map_or(song.path.as_path(), |bundle| bundle.audio.as_path());
+    // Do not fetch remote originals solely for metadata when playable stems
+    // already exist. A missing/unreadable source simply has no ReplayGain.
+    if !source.is_file() {
+        return None;
+    }
+    replay_gain::read(source)
+}
+
 pub fn get_audio_paths(file_hash: &str) -> AudioPaths {
     let cache = CacheDir::new();
-    if let Some(song) = library_db::load_song_by_hash(file_hash).ok().flatten() {
+    let song = library_db::load_song_by_hash(file_hash).ok().flatten();
+    let replay = song.as_ref().and_then(source_replay_gain);
+    if let Some(song) = song {
         if song.no_stems {
             let tempo = normalize_tempo(song.tempo);
             if let Some(key) = song.override_key.as_ref().or(song.key.as_ref())
@@ -126,25 +157,22 @@ pub fn get_audio_paths(file_hash: &str) -> AudioPaths {
             {
                 let variant = cache.variant_instrumental_path(file_hash, key, tempo);
                 if variant.is_file() {
-                    return AudioPaths {
-                        instrumental: variant.to_string_lossy().into_owned(),
-                        vocals: None,
-                    };
+                    return audio_paths(variant.to_string_lossy().into_owned(), None, replay);
                 }
             }
-            return AudioPaths {
-                instrumental: resolve_original_media(&song, &cache),
-                vocals: None,
-            };
+            let original = resolve_original_media(&song, &cache);
+            let replay = replay.or_else(|| replay_gain::read(Path::new(&original)));
+            return audio_paths(original, None, replay);
         }
 
         if let Some(bundle) = song.usdx.as_ref() {
             let voc = bundle.vocals.as_ref().unwrap_or(&bundle.audio);
             let inst = bundle.instrumental.as_ref().unwrap_or(&bundle.audio);
-            return AudioPaths {
-                instrumental: inst.to_string_lossy().into_owned(),
-                vocals: Some(voc.to_string_lossy().into_owned()),
-            };
+            return audio_paths(
+                inst.to_string_lossy().into_owned(),
+                Some(voc.to_string_lossy().into_owned()),
+                replay,
+            );
         }
 
         let effective_key = song.override_key.as_ref().or(song.key.as_ref());
@@ -155,35 +183,39 @@ pub fn get_audio_paths(file_hash: &str) -> AudioPaths {
             let variant_vocals = cache.variant_vocals_path(file_hash, key, tempo);
             if is_base_original_selection(&song, key, tempo) {
                 if variant_instrumental.is_file() && variant_vocals.is_file() {
-                    return AudioPaths {
-                        instrumental: variant_instrumental.to_string_lossy().into_owned(),
-                        vocals: Some(variant_vocals.to_string_lossy().into_owned()),
-                    };
+                    return audio_paths(
+                        variant_instrumental.to_string_lossy().into_owned(),
+                        Some(variant_vocals.to_string_lossy().into_owned()),
+                        replay,
+                    );
                 }
                 let legacy_inst = cache.instrumental_path(file_hash);
                 let legacy_voc = cache.vocals_path(file_hash);
                 if legacy_inst.is_file() && legacy_voc.is_file() {
-                    return AudioPaths {
-                        instrumental: legacy_inst.to_string_lossy().into_owned(),
-                        vocals: Some(legacy_voc.to_string_lossy().into_owned()),
-                    };
+                    return audio_paths(
+                        legacy_inst.to_string_lossy().into_owned(),
+                        Some(legacy_voc.to_string_lossy().into_owned()),
+                        replay,
+                    );
                 }
             }
             if variant_instrumental.is_file() && variant_vocals.is_file() {
-                return AudioPaths {
-                    instrumental: variant_instrumental.to_string_lossy().into_owned(),
-                    vocals: Some(variant_vocals.to_string_lossy().into_owned()),
-                };
+                return audio_paths(
+                    variant_instrumental.to_string_lossy().into_owned(),
+                    Some(variant_vocals.to_string_lossy().into_owned()),
+                    replay,
+                );
             }
         }
     }
 
     let legacy_inst = cache.instrumental_path(file_hash);
     let legacy_voc = cache.vocals_path(file_hash);
-    AudioPaths {
-        instrumental: legacy_inst.to_string_lossy().into_owned(),
-        vocals: Some(legacy_voc.to_string_lossy().into_owned()),
-    }
+    audio_paths(
+        legacy_inst.to_string_lossy().into_owned(),
+        Some(legacy_voc.to_string_lossy().into_owned()),
+        replay,
+    )
 }
 
 fn is_mp4_compatible_source(path: &Path) -> bool {

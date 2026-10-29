@@ -14,6 +14,7 @@ mod playback_queue;
 mod playback_session;
 mod playlist_auto_analysis;
 mod profile;
+mod replay_gain;
 mod scanner;
 mod secret;
 mod song;
