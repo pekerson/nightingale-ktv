@@ -21,7 +21,7 @@ use super::schema::songs;
 use super::songs::{append_songs, update_library_meta};
 use super::sql_functions::json_extract_text;
 
-const SCHEMA_VERSION: i32 = 6;
+const SCHEMA_VERSION: i32 = 7;
 
 static MIGRATING: AtomicBool = AtomicBool::new(false);
 static MIGRATION_TOTAL: AtomicUsize = AtomicUsize::new(0);
@@ -163,6 +163,13 @@ pub(super) fn run_migrations(conn: &mut SqliteConnection) -> Result<(), Nighting
         conn.batch_execute(
             "ALTER TABLE song_mv_associations
              ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1));",
+        )?;
+    }
+    if version < 7 {
+        conn.batch_execute(
+            "ALTER TABLE song_mv_associations
+             ADD COLUMN offset_ms INTEGER NOT NULL DEFAULT 0
+             CHECK (offset_ms BETWEEN -1001000 AND 1001000);",
         )?;
     }
     conn.batch_execute(&format!("PRAGMA user_version = {SCHEMA_VERSION}"))?;

@@ -72,6 +72,7 @@ diesel::table! {
         manual_path -> Nullable<Text>,
         automatic_path -> Nullable<Text>,
         enabled -> Bool,
+        offset_ms -> BigInt,
     }
 }
 

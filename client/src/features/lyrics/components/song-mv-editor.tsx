@@ -5,7 +5,13 @@ import { toast } from 'sonner';
 
 import { isTauri } from '@/bridge/runtime';
 import { songIntroSourceKey } from '@/bridge/song-intro';
-import { getSongMv, setSongMv, setSongMvEnabled, type SongMv } from '@/bridge/song-mv';
+import {
+  getSongMv,
+  setSongMv,
+  setSongMvEnabled,
+  setSongMvOffset,
+  type SongMv,
+} from '@/bridge/song-mv';
 import { useDialog } from '@/features/menu/hooks/use-dialog';
 import { useDialogNav } from '@/features/menu/hooks/use-dialog-nav';
 import { Button } from '@/shared/components/ui/button';
@@ -64,6 +70,12 @@ function useSongMvEditor(song: Song) {
   const scope = `${songIntroSourceKey(config?.library_source)}:${song.file_hash}`;
   const queryKey = ['song-mv', scope];
   const [draft, setDraft] = useState<{ scope: string; path: string } | null>(null);
+  const [offsetDraft, setOffsetDraft] = useState<{
+    scope: string;
+    sign: 1 | -1;
+    seconds: string;
+    milliseconds: string;
+  } | null>(null);
   const query = useQuery({
     queryKey,
     queryFn: () => getSongMv(song.file_hash),
@@ -88,6 +100,16 @@ function useSongMvEditor(song: Song) {
     onError: (error: Error) =>
       toast.error(t('Could not update MV display: {error}', { error: error.message })),
   });
+  const offsetMutation = useMutation({
+    mutationFn: (offsetMs: number) => setSongMvOffset(song.file_hash, offsetMs),
+    onSuccess: (result) => {
+      queryClient.setQueryData(queryKey, result);
+      setOffsetDraft(null);
+      toast.success(t('MV timing saved'));
+    },
+    onError: (error: Error) =>
+      toast.error(t('Could not save MV timing: {error}', { error: error.message })),
+  });
   const storedPath = query.data?.effective_path ?? '';
   const value = draft?.scope === scope ? draft.path : storedPath;
   const setPath = (path: string) => setDraft({ scope, path });
@@ -97,6 +119,7 @@ function useSongMvEditor(song: Song) {
     query.isError,
     pathMutation.isLoading,
     enabledMutation.isLoading,
+    offsetMutation.isLoading,
   ].some(Boolean);
   const canSavePath = canSaveMvPath({ busy, draft, scope, value, storedPath });
   const canRestore = !busy && query.data !== undefined && query.data.manual_path !== null;
@@ -110,7 +133,34 @@ function useSongMvEditor(song: Song) {
       toast.error(error instanceof Error ? error.message : t('Could not choose MV file'));
     }
   };
+  const storedOffset = query.data?.offset_ms ?? 0;
+  const offset =
+    offsetDraft?.scope === scope
+      ? offsetDraft
+      : {
+          scope,
+          sign: storedOffset < 0 ? (-1 as const) : (1 as const),
+          seconds: String(Math.floor(Math.abs(storedOffset) / 1000)),
+          milliseconds: String(Math.abs(storedOffset) % 1000),
+        };
+  const seconds = Number(offset.seconds);
+  const milliseconds = Number(offset.milliseconds);
+  const validOffset =
+    /^\d+$/.test(offset.seconds) &&
+    /^\d+$/.test(offset.milliseconds) &&
+    Number.isInteger(seconds) &&
+    seconds <= 1000 &&
+    Number.isInteger(milliseconds) &&
+    milliseconds <= 1000;
+  const offsetMs = offset.sign * (seconds * 1000 + milliseconds);
+  const setOffset = (change: Partial<typeof offset>) => setOffsetDraft({ ...offset, ...change });
   return {
+    offset,
+    setOffset,
+    validOffset,
+    canSaveOffset:
+      !busy && offsetDraft?.scope === scope && validOffset && offsetMs !== storedOffset,
+    saveOffset: () => offsetMutation.mutate(offsetMs),
     value,
     setPath,
     choose,
@@ -211,13 +261,80 @@ function MvEnabledField({ state }: { state: MvEditorState }) {
   );
 }
 
+function MvOffsetField({ state }: { state: MvEditorState }) {
+  const { t } = useI18n();
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium">{t('MV timing offset')}</p>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="space-y-1 text-xs text-muted-foreground">
+          <span>{t('Direction')}</span>
+          <select
+            aria-label={t('Direction')}
+            value={state.offset.sign}
+            disabled={state.busy}
+            onChange={(event) => state.setOffset({ sign: Number(event.target.value) as 1 | -1 })}
+            className="h-9 rounded-md border bg-background px-2 text-foreground"
+          >
+            <option value={1}>+</option>
+            <option value={-1}>−</option>
+          </select>
+        </label>
+        <label className="space-y-1 text-xs text-muted-foreground">
+          <span>{t('Seconds')}</span>
+          <Input
+            aria-label={t('MV offset seconds')}
+            inputMode="numeric"
+            value={state.offset.seconds}
+            onChange={(event) => state.setOffset({ seconds: event.target.value })}
+            readOnly={state.busy}
+            aria-invalid={!state.validOffset}
+            className="w-20 text-center font-mono"
+          />
+        </label>
+        <span aria-hidden="true" className="pb-1">
+          .
+        </span>
+        <label className="space-y-1 text-xs text-muted-foreground">
+          <span>{t('Milliseconds')}</span>
+          <Input
+            aria-label={t('MV offset milliseconds')}
+            inputMode="numeric"
+            value={state.offset.milliseconds}
+            onChange={(event) => state.setOffset({ milliseconds: event.target.value })}
+            readOnly={state.busy}
+            aria-invalid={!state.validOffset}
+            className="w-20 text-center font-mono"
+          />
+        </label>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={!state.canSaveOffset}
+          onClick={state.saveOffset}
+        >
+          {t('Save MV timing')}
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {t('Plus skips the beginning of the MV; minus shows a black screen before the MV starts.')}
+      </p>
+      {!state.validOffset && (
+        <p role="alert" className="text-xs text-destructive">
+          {t('Seconds and milliseconds must each be integers from 0 to 1000.')}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function SongMvDialogContent({ song, onClose }: { song: Song; onClose: () => void }) {
   const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
   const state = useSongMvEditor(song);
   useDialogNav({
     open: true,
-    itemCount: isTauri ? 7 : 6,
+    itemCount: isTauri ? 11 : 10,
     onBack: onClose,
     containerRef,
   });
@@ -225,6 +342,7 @@ function SongMvDialogContent({ song, onClose }: { song: Song; onClose: () => voi
     <div ref={containerRef} data-nav-passthrough className="space-y-4">
       <MvPathField state={state} />
       <MvEnabledField state={state} />
+      <MvOffsetField state={state} />
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"

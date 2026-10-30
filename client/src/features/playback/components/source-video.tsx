@@ -52,12 +52,15 @@ function useMediaUrl(filePath: string, onError: (path: string) => void): string 
 }
 
 export const SourceVideo = ({ isActive }: SourceVideoProps) => {
-  const { sourceVideoPath, sourceVideoTempoRatio } = usePlaybackThemeState();
+  const { sourceVideoPath, sourceVideoTempoRatio, sourceVideoOffsetMs } = usePlaybackThemeState();
   const { reportSourceVideoError } = usePlaybackThemeActions();
   const { isReady, isPlaying } = usePlaybackTransportState();
   const { subscribe, getCurrentTime } = usePlaybackTransportActions();
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [delayElapsed, setDelayElapsed] = useState(
+    () => getCurrentTime() * sourceVideoTempoRatio + sourceVideoOffsetMs / 1000 >= 0,
+  );
   const [finishState, setFinishState] = useState<{ src: string | null; finished: boolean } | null>(
     null,
   );
@@ -71,37 +74,45 @@ export const SourceVideo = ({ isActive }: SourceVideoProps) => {
     src: playableSource(sourceVideoPath, src) ? src : null,
     isPlaying: playWhenActive,
     tempoRatio: sourceVideoTempoRatio,
+    offsetSec: sourceVideoOffsetMs / 1000,
     subscribe,
     getCurrentTime,
   });
 
   useEffect(() => {
     return subscribe((time) => {
+      const target = time * sourceVideoTempoRatio + sourceVideoOffsetMs / 1000;
+      setDelayElapsed(target >= 0);
       const video = videoRef.current;
       if (!video || !Number.isFinite(video.duration) || video.duration <= 0) {
         return;
       }
-      const finished = time * sourceVideoTempoRatio >= video.duration - 0.05;
+      const finished = target >= video.duration - 0.05;
       setFinishState((current) =>
         current?.src === src && current.finished === finished ? current : { src, finished },
       );
     });
-  }, [sourceVideoTempoRatio, src, subscribe]);
+  }, [sourceVideoTempoRatio, sourceVideoOffsetMs, src, subscribe]);
 
   if (!playableSource(sourceVideoPath, src)) {
     return null;
   }
 
   return (
-    <video
-      ref={videoRef}
-      className={cn(VIDEO_CLASS_NAME, 'object-contain bg-black')}
-      style={{ visibility: videoVisibility(ready, isActive, videoFinished) }}
-      src={src}
-      muted
-      playsInline
-      onError={() => reportSourceVideoError(sourceVideoPath ?? '')}
-      onEnded={() => setFinishState({ src, finished: true })}
-    />
+    <>
+      {isActive && !delayElapsed && (
+        <div className="pointer-events-none absolute inset-0 size-full bg-black" />
+      )}
+      <video
+        ref={videoRef}
+        className={cn(VIDEO_CLASS_NAME, 'object-contain bg-black')}
+        style={{ visibility: videoVisibility(ready, isActive && delayElapsed, videoFinished) }}
+        src={src}
+        muted
+        playsInline
+        onError={() => reportSourceVideoError(sourceVideoPath ?? '')}
+        onEnded={() => setFinishState({ src, finished: true })}
+      />
+    </>
   );
 };

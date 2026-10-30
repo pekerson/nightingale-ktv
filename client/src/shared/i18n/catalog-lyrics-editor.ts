@@ -1,5 +1,16 @@
 export const lyricsEditorChinese: Readonly<Record<string, string>> = {
   'Edit MV': '编辑MV',
+  'MV timing offset': 'MV画面时间偏移',
+  Direction: '方向',
+  'MV offset seconds': 'MV偏移秒数',
+  'MV offset milliseconds': 'MV偏移毫秒数',
+  'Save MV timing': '保存MV时间',
+  'MV timing saved': 'MV时间已保存',
+  'Could not save MV timing: {error}': '保存MV时间失败：{error}',
+  'Plus skips the beginning of the MV; minus shows a black screen before the MV starts.':
+    '正数跳过MV开头，负数先显示黑屏再播放MV。',
+  'Seconds and milliseconds must each be integers from 0 to 1000.':
+    '秒和毫秒都必须是0～1000的整数。',
   'Choose this song’s video and whether to show it during playback.':
     '选择这首歌的MV，并设置播放时是否显示。',
   'Loading MV selection…': '正在读取MV设置…',

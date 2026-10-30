@@ -36,6 +36,7 @@ export type PlaybackThemeState = {
   videoFlavor: VideoFlavor;
   sourceVideoPath: string | undefined;
   sourceVideoTempoRatio: number;
+  sourceVideoOffsetMs: number;
 };
 
 export type PlaybackThemeActions = {
@@ -59,6 +60,7 @@ type AssociatedVideo = {
   enabled: boolean;
   selected: boolean;
   playablePath: string | null;
+  offsetMs: number;
 };
 
 const isMvDisabled = (fileHash: string, association: AssociatedVideo | null): boolean =>
@@ -99,26 +101,45 @@ function useSourceVideoSelection(song: Song) {
           return undefined;
         }
         if (association.enabled && association.effective_path !== null) {
-          setAssociatedVideo({ fileHash, enabled: true, selected: true, playablePath: null });
+          setAssociatedVideo({
+            fileHash,
+            enabled: true,
+            selected: true,
+            playablePath: null,
+            offsetMs: association.offset_ms,
+          });
           const path = await ensurePlayableAssociatedMv(fileHash);
           controller.signal.throwIfAborted();
           if (path === null) {
             throw new Error('MV video is unavailable');
           }
-          setAssociatedVideo({ fileHash, enabled: true, selected: true, playablePath: path });
+          setAssociatedVideo({
+            fileHash,
+            enabled: true,
+            selected: true,
+            playablePath: path,
+            offsetMs: association.offset_ms,
+          });
         } else {
           setAssociatedVideo({
             fileHash,
             enabled: association.enabled,
             selected: false,
             playablePath: null,
+            offsetMs: association.offset_ms,
           });
         }
         return undefined;
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted) {
-          setAssociatedVideo({ fileHash, enabled: true, selected: false, playablePath: null });
+          setAssociatedVideo({
+            fileHash,
+            enabled: true,
+            selected: false,
+            playablePath: null,
+            offsetMs: 0,
+          });
           toast.error(t('Could not prepare MV: {error}', { error: String(error) }));
         }
       });
@@ -148,6 +169,7 @@ function useSourceVideoSelection(song: Song) {
     hasAssociatedVideo,
     mvDisabled,
     sourceVideoPath: resolveSourceVideoPath(song, playableVideo, associatedVideo),
+    sourceVideoOffsetMs: associatedVideo?.fileHash === fileHash ? associatedVideo.offsetMs : 0,
   };
 }
 
@@ -201,7 +223,8 @@ export function PlaybackThemeProvider({ song, config, children }: PlaybackThemeP
   const [selectedThemeKey, setSelectedThemeKey] = useState<string | null>(null);
   const [flavorIndex, setFlavorIndex] = useState(config?.last_video_flavor ?? 0);
   const persistConfig = usePlaybackConfigPersist(config);
-  const { hasAssociatedVideo, mvDisabled, sourceVideoPath } = useSourceVideoSelection(song);
+  const { hasAssociatedVideo, mvDisabled, sourceVideoPath, sourceVideoOffsetMs } =
+    useSourceVideoSelection(song);
   const { failedPath, reportSourceVideoError } = useSourceVideoFailure();
   const sourceVideoFailed = sourceVideoPath !== undefined && failedPath === sourceVideoPath;
   const hasSourceVideo = !mvDisabled && (song.is_video || hasAssociatedVideo);
@@ -241,8 +264,9 @@ export function PlaybackThemeProvider({ song, config, children }: PlaybackThemeP
       videoFlavor: FLAVORS[flavorIndex % FLAVORS.length],
       sourceVideoPath: sourceVideoFailed ? undefined : sourceVideoPath,
       sourceVideoTempoRatio: song.tempo,
+      sourceVideoOffsetMs,
     }),
-    [theme, flavorIndex, sourceVideoPath, sourceVideoFailed, song.tempo],
+    [theme, flavorIndex, sourceVideoPath, sourceVideoFailed, song.tempo, sourceVideoOffsetMs],
   );
 
   const actionsValue = useMemo<PlaybackThemeActions>(

@@ -570,6 +570,22 @@ pub async fn dispatch(state: CommandState, name: &str, payload: Value) -> CmdRes
             );
             serde_json::to_value(result).map_err(serde_err)
         }
+        "set_song_mv_offset" => {
+            #[derive(Deserialize)]
+            #[serde(rename_all = "camelCase")]
+            struct Args {
+                file_hash: String,
+                offset_ms: i64,
+            }
+            let args: Args = deserialize(payload)?;
+            let result = app_core::set_song_mv_offset(&args.file_hash, args.offset_ms)
+                .map_err(ApiError::bad_request)?;
+            events.emit_value(
+                "song-mv-changed",
+                serde_json::json!({"file_hash": args.file_hash}),
+            );
+            serde_json::to_value(result).map_err(serde_err)
+        }
         "search_lrclib_lyrics" => {
             let args: FileHashArgs = deserialize(payload)?;
             let candidates =

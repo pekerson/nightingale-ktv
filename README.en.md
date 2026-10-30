@@ -16,9 +16,9 @@ This is a personal modification of [Nightingale](https://github.com/rzru/nightin
 - **Upstream website and documentation:** [nightingale.cafe](https://nightingale.cafe/) · [user guide](https://nightingale.cafe/docs/)
 - **This repository:** [pekerson/nightingale-ktv](https://github.com/pekerson/nightingale-ktv)
 - **License:** GPL-3.0-or-later, retained from upstream; see [LICENSE](LICENSE).
-- **Windows x64 test installer (with ReplayGain):** [v1.3.0-ktv19-test Release](https://github.com/pekerson/nightingale-ktv/releases/tag/v1.3.0-ktv19-test); installer SHA-256: `73E2769A30E621E8B110BE2B5C4507C14B9CB78CA3EDA720CF1436132E37EDEC`. The matching source ZIP and checksum file are on the same release page.
+- **Windows x64 test installer (with per-song MV timing offset):** [v1.3.0-ktv20-test Release](https://github.com/pekerson/nightingale-ktv/releases/tag/v1.3.0-ktv20-test). Installer SHA-256: `BEAEA9A066512EAC36C49B54E962267B8DE6371A41905F3B73ADEACE6EF2B859`. The matching source ZIP and checksum file are on the same release page.
 
-> This repository is a trimmed source snapshot of the modified edition. It includes application source, build configuration, deployment scripts, and the license. It does not include the upstream website, GitHub Actions, agent rules, or build caches. The installer is a separate Release asset, not a file in the source tree. “v19” below is a local modification-stage number; the application manifests still use the upstream 1.3.0 version number.
+> This repository is a trimmed source snapshot of the modified edition. It includes application source, build configuration, deployment scripts, and the license. It does not include the upstream website, GitHub Actions, agent rules, or build caches. The installer is a separate Release asset, not a file in the source tree. “v20” below is a local modification-stage number; the application manifests still use the upstream 1.3.0 version number.
 
 ## Development approach and support
 
@@ -76,7 +76,7 @@ The following summarizes the upstream v1.3.0 [README](https://github.com/rzru/ni
 ### MV and singing interface
 
 - **External MV per song:** A separate Edit MV dialog in song details lets you choose a video, inspect automatic matching, and enable or disable MV for that song. An MV directory can be configured; a manual selection takes priority over automatic matching.
-- **Mapped drives and compatible playback:** Automatic matching requires a video file stem exactly equal to the song title or “Title - Artist.” Supported formats are MP4, MKV, AVI, WebM, MOV, and M4V. Windows mapped drives such as K: are scanned using their original paths; files are cached locally and remuxed or transcoded when necessary. The MV supplies video only; audio still comes from the library song. The entire picture is shown at its original aspect ratio with black bars, and the rest of the song is black if the MV ends early.
+- **Mapped drives and compatible playback:** Automatic matching requires a video file stem exactly equal to the song title or “Title - Artist.” Supported formats are MP4, MKV, AVI, WebM, MOV, and M4V. Windows mapped drives such as K: are scanned using their original paths; files are cached locally and remuxed or transcoded when necessary. The MV supplies video only; audio still comes from the library song. The entire picture is shown at its original aspect ratio with black bars, and the rest of the song is black if the MV ends early. Each song can have a signed MV timing offset in Edit MV: a positive value skips the beginning of the video, while a negative value shows black before the video starts. Seconds and milliseconds have separate 0–1000 inputs.
 - **Collapsible progress area:** Playback controls are expanded by default. The progress, button, and volume area is expanded by default too, but can be collapsed; its state survives song changes and restarts. Song title and artist remain visible.
 - **Lyrics and pitch graph:** Each can be enabled or disabled; associated position settings collapse when disabled. Each has horizontal/vertical anchors and X/Y offsets. A central line in the pitch graph marks now, with history on the left and upcoming reference pitch on the right. The default time span is about twice the upstream span and is configurable; pitch-graph scale reaches 500%.
 - **Interface sizing and languages:** Progress area, right-side status text, and playback-control buttons each scale from 50% to 200%; application font size ranges from 12 to 24. Switch between English and Simplified Chinese with the choice retained. The separate playback window keeps a transparent but draggable top region and symmetrical rounded window-button borders.
@@ -127,7 +127,7 @@ This trimmed snapshot omits the upstream agent rules and Git hooks, but `client/
 - Dual-output routing depends on the OS and browser/desktop runtime supporting selected output devices. A song without a separate dry-vocal stem cannot gain isolated original vocals from a volume slider alone.
 - Intro/outro detection depends on valid lyric timing and separated-stem quality; manually calibrate the first line for songs where automatic detection is inaccurate.
 - An associated MV is **silent video** and does not replace the library song audio. This edition does not add singing recording or playback of a recording.
-- The Windows x64 test installer and matching source ZIP are available in the [v19 test Release](https://github.com/pekerson/nightingale-ktv/releases/tag/v1.3.0-ktv19-test), outside Git source history. This repository is now public, so anyone can download them; the release remains marked as a prerelease.
+- The Windows x64 test installer and matching source ZIP are available in the [v20 test Release](https://github.com/pekerson/nightingale-ktv/releases/tag/v1.3.0-ktv20-test), outside Git source history. This repository is now public, so anyone can download them; the release remains marked as a prerelease.
 
 ## Attribution and license
 

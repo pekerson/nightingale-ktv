@@ -37,7 +37,7 @@ mod sql_functions;
 
 pub use song_intro::{SongIntroStart, get_song_intro_start, set_song_intro_start};
 pub(crate) use song_mv::refresh_automatic_mv;
-pub use song_mv::{SongMv, get_song_mv, set_song_mv, set_song_mv_enabled};
+pub use song_mv::{SongMv, get_song_mv, set_song_mv, set_song_mv_enabled, set_song_mv_offset};
 
 pub(crate) use analysis_queue::{
     analysis_queue_clear, analysis_queue_delete, analysis_queue_load_rows,

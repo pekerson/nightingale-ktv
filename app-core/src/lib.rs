@@ -41,7 +41,7 @@ pub use cache::{
 pub use config::{AppConfig, AudioOutputRoute, LibrarySource, UiLanguage, WindowState};
 pub use library_db::{
     SongIntroStart, SongMv, get_song_intro_start, get_song_mv, init_library, library_db_path,
-    set_song_intro_start, set_song_mv, set_song_mv_enabled,
+    set_song_intro_start, set_song_mv, set_song_mv_enabled, set_song_mv_offset,
 };
 pub use library_menu::{LibraryMenuItem, LibraryMenuItems, load_library_menu_items};
 pub use library_model::{

@@ -20,6 +20,7 @@ type UseSourceVideoSyncOptions = {
   src: string | null;
   isPlaying: boolean;
   tempoRatio: number;
+  offsetSec: number;
   subscribe: (fn: TimeSubscriber) => () => void;
   getCurrentTime: () => number;
 };
@@ -161,6 +162,7 @@ export function useSourceVideoSync({
   src,
   isPlaying,
   tempoRatio,
+  offsetSec,
   subscribe,
   getCurrentTime,
 }: UseSourceVideoSyncOptions): { ready: boolean } {
@@ -173,8 +175,8 @@ export function useSourceVideoSync({
 
   const currentRatio = useCallback(() => normalizeRatio(tempoRatioRef.current), [tempoRatioRef]);
   const toSourceTime = useCallback(
-    (audioTime: number) => Math.max(0, audioTime * currentRatio()),
-    [currentRatio],
+    (audioTime: number) => audioTime * currentRatio() + offsetSec,
+    [currentRatio, offsetSec],
   );
 
   useEffect(() => {
@@ -190,12 +192,12 @@ export function useSourceVideoSync({
 
     return runInitialSeek(
       video,
-      () => toSourceTime(getCurrentTime()),
+      () => Math.max(0, toSourceTime(getCurrentTime())),
       () => {
         readyRef.current = true;
         setReady(true);
         applyPlaybackRate(video, currentRatio());
-        if (isPlayingRef.current) {
+        if (isPlayingRef.current && toSourceTime(getCurrentTime()) >= 0) {
           safePlay(video);
         }
       },
@@ -211,12 +213,12 @@ export function useSourceVideoSync({
     enforceSilent(video);
     applyPlaybackRate(video, currentRatio());
 
-    if (isPlaying) {
+    if (isPlaying && toSourceTime(getCurrentTime()) >= 0) {
       safePlay(video);
     } else {
       video.pause();
     }
-  }, [currentRatio, isPlaying, videoRef]);
+  }, [currentRatio, getCurrentTime, isPlaying, toSourceTime, videoRef]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -229,7 +231,7 @@ export function useSourceVideoSync({
       return;
     }
 
-    correctDrift(video, toSourceTime(getCurrentTime()), lastSyncRef, 'aggressive');
+    correctDrift(video, Math.max(0, toSourceTime(getCurrentTime())), lastSyncRef, 'aggressive');
   }, [currentRatio, getCurrentTime, toSourceTime, videoRef]);
 
   useEffect(() => {
@@ -239,9 +241,18 @@ export function useSourceVideoSync({
         return;
       }
 
-      correctDrift(video, toSourceTime(time), lastSyncRef, 'throttled');
+      const target = toSourceTime(time);
+      if (target < 0) {
+        video.pause();
+        correctDrift(video, 0, lastSyncRef, 'aggressive');
+        return;
+      }
+      if (isPlayingRef.current && video.paused) {
+        safePlay(video);
+      }
+      correctDrift(video, target, lastSyncRef, 'throttled');
     });
-  }, [subscribe, toSourceTime, videoRef]);
+  }, [isPlayingRef, subscribe, toSourceTime, videoRef]);
 
   return { ready };
 }

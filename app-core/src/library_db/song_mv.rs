@@ -16,6 +16,7 @@ pub struct SongMv {
     pub automatic_path: Option<String>,
     pub effective_path: Option<String>,
     pub enabled: bool,
+    pub offset_ms: i64,
 }
 
 fn identity(file_hash: &str) -> Result<(Song, String, String), String> {
@@ -124,18 +125,20 @@ fn song_mv(source: &str, key: &str) -> Result<SongMv, String> {
                 associations::manual_path,
                 associations::automatic_path,
                 associations::enabled,
+                associations::offset_ms,
             ))
-            .first::<(Option<String>, Option<String>, bool)>(conn)
+            .first::<(Option<String>, Option<String>, bool, i64)>(conn)
             .optional()?)
     })
     .map_err(|error| error.to_string())?;
-    let (manual_path, automatic_path, enabled) = row.unwrap_or((None, None, true));
+    let (manual_path, automatic_path, enabled, offset_ms) = row.unwrap_or((None, None, true, 0));
     let effective_path = manual_path.clone().or_else(|| automatic_path.clone());
     Ok(SongMv {
         manual_path,
         automatic_path,
         effective_path,
         enabled,
+        offset_ms,
     })
 }
 
@@ -176,6 +179,28 @@ pub fn set_song_mv_enabled(file_hash: &str, enabled: bool) -> Result<SongMv, Str
             .on_conflict((associations::source_key, associations::song_key))
             .do_update()
             .set(associations::enabled.eq(enabled))
+            .execute(conn)?;
+        Ok(())
+    })
+    .map_err(|error| error.to_string())?;
+    song_mv(&source, &key)
+}
+
+pub fn set_song_mv_offset(file_hash: &str, offset_ms: i64) -> Result<SongMv, String> {
+    if !(-1_001_000..=1_001_000).contains(&offset_ms) {
+        return Err("MV offset must be between -1001 and +1001 seconds".into());
+    }
+    let (_, source, key) = identity(file_hash)?;
+    with_conn(|conn| {
+        diesel::insert_into(associations::table)
+            .values((
+                associations::source_key.eq(&source),
+                associations::song_key.eq(&key),
+                associations::offset_ms.eq(offset_ms),
+            ))
+            .on_conflict((associations::source_key, associations::song_key))
+            .do_update()
+            .set(associations::offset_ms.eq(offset_ms))
             .execute(conn)?;
         Ok(())
     })

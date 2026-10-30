@@ -7,6 +7,7 @@ const songMvSchema = z.object({
   automatic_path: z.string().nullable(),
   effective_path: z.string().nullable(),
   enabled: z.boolean(),
+  offset_ms: z.number().int(),
 });
 
 export type SongMv = z.infer<typeof songMvSchema>;
@@ -19,6 +20,9 @@ export const setSongMv = async (fileHash: string, path: string | null): Promise<
 
 export const setSongMvEnabled = async (fileHash: string, enabled: boolean): Promise<SongMv> =>
   songMvSchema.parse(await invoke<unknown>('set_song_mv_enabled', { fileHash, enabled }));
+
+export const setSongMvOffset = async (fileHash: string, offsetMs: number): Promise<SongMv> =>
+  songMvSchema.parse(await invoke<unknown>('set_song_mv_offset', { fileHash, offsetMs }));
 
 export const ensurePlayableAssociatedMv = async (fileHash: string): Promise<string | null> => {
   const value = await invoke<unknown>('ensure_playable_associated_mv', { fileHash });
