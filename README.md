@@ -127,7 +127,7 @@ cargo desktop dev
 - 双输出的音源分配取决于系统和浏览器/桌面运行环境对指定输出设备的支持。没有独立干声分轨的歌曲无法仅靠滑杆分离出原唱。
 - 前奏和尾奏判断依赖有效歌词时序与分离音轨质量；对检测不准的歌曲可手工校准首句。
 - 逐歌关联的 MV 是**无声画面**，不替换曲库里的歌曲音频。本改造版没有新增演唱录音与回放功能。
-- Windows x64 测试安装包已放在 [本仓库的 Release](https://github.com/pekerson/nightingale-ktv/releases/tag/v1.3.0-ktv18-test)，未纳入 Git 源码历史。仓库保持私有时，只有具备仓库访问权限的账号可以下载。
+- Windows x64 测试安装包和对应源码 ZIP 已放在 [v19 测试版 Release](https://github.com/pekerson/nightingale-ktv/releases/tag/v1.3.0-ktv19-test)，未纳入 Git 源码历史。本仓库现已公开，任何人都可以下载；此版本仍标记为预发布版。
 
 ## 来源与许可
 

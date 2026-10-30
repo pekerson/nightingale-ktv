@@ -127,7 +127,7 @@ This trimmed snapshot omits the upstream agent rules and Git hooks, but `client/
 - Dual-output routing depends on the OS and browser/desktop runtime supporting selected output devices. A song without a separate dry-vocal stem cannot gain isolated original vocals from a volume slider alone.
 - Intro/outro detection depends on valid lyric timing and separated-stem quality; manually calibrate the first line for songs where automatic detection is inaccurate.
 - An associated MV is **silent video** and does not replace the library song audio. This edition does not add singing recording or playback of a recording.
-- The Windows x64 test installer is available in [this repository's Release](https://github.com/pekerson/nightingale-ktv/releases/tag/v1.3.0-ktv18-test), outside Git source history. While the repository is private, downloads require repository access.
+- The Windows x64 test installer and matching source ZIP are available in the [v19 test Release](https://github.com/pekerson/nightingale-ktv/releases/tag/v1.3.0-ktv19-test), outside Git source history. This repository is now public, so anyone can download them; the release remains marked as a prerelease.
 
 ## Attribution and license
 
